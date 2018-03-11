@@ -1,0 +1,33 @@
+#ifndef COMHANDLER_H_
+#define COMHANDLER_H_
+
+
+
+#include "UserPack.h"
+#include "COMPort.h"
+
+
+
+class COMHandler {
+public:
+	enum class STATE {
+		CLOSED = 0,
+		OPENED
+	};
+	enum class RESULT {
+		Error = -1,
+		Success
+	};
+
+	COMHandler();
+	COMHandler::STATE GetState();
+	COMHandler::RESULT Send(UserPack *pack);
+	COMHandler::RESULT Receive(UserPack *pack);
+private:
+	COMPort port;
+	COMHandler::STATE state;
+};
+
+
+
+#endif /* COMHANDLER_H_ */

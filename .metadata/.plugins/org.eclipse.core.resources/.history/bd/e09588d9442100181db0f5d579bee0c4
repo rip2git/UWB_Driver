@@ -1,0 +1,32 @@
+#include "COMHandler.h"
+#include "CheckSum.h"
+
+
+
+COMHandler::COMHandler()
+{
+
+}
+
+
+
+COMHandler::STATE COMHandler::GetState() const
+{
+
+}
+
+
+
+COMHandler::RESULT COMHandler::Send(const UserPack *pack) const
+{
+
+}
+
+
+
+COMHandler::RESULT COMHandler::Receive(const UserPack *pack) const
+{
+
+}
+
+

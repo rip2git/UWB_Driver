@@ -1,0 +1,26 @@
+#ifndef USERPACK_H_
+#define USERPACK_H_
+
+
+
+struct UserPack {
+
+	enum class COMMAND : unsigned char {
+		SetID = 1,
+		Distance,
+		Data
+	};
+	static const unsigned char BROADCAST_ID = 0xFF;
+
+	COMMAND Command;
+	unsigned char DestinationID;
+	unsigned char TotalSize;
+	unsigned char *Data;
+
+	void ToBytes(unsigned char *buffer) const;
+	void ToStruct(const unsigned char *buffer);
+};
+
+
+
+#endif /* USERPACK_H_ */

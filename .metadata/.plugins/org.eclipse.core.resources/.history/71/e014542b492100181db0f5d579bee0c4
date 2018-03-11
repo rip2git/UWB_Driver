@@ -1,0 +1,61 @@
+#include "COMHandler.h"
+#include "CheckSum.h"
+
+
+union uint16_str {
+	uint16 d;
+	uint8 b[2];
+};
+
+
+
+COMHandler::COMHandler()
+{
+	this->state = COMHandler::STATE::CLOSED;
+
+	COMPort::InitializationStruct init_str;
+	init_str.baudRate = 115200;
+	init_str.timeOut.Ms = 10;
+	init_str.timeOut.nChars = 0;
+
+	char pn[] = "COM1";
+	for (int i = 1; i < 10; ++i) {
+		pn[3] = i | 0x30;
+		init_str.portName = pn;
+		port.Initialization(&init_str);
+		if (port.GetState() == COMPort::OPENED)
+			break;
+	}
+	if (port.GetState() == COMPort::OPENED)
+		this->state = COMHandler::STATE::OPENED;
+}
+
+
+
+COMHandler::STATE COMHandler::GetState() const
+{
+	return this->state;
+}
+
+
+
+COMHandler::RESULT COMHandler::Send(const UserPack *pack) const
+{
+	uint8 *buffer = new uint8[pack->TotalSize + UserPack::DATA_OFFSET + 2];
+	uint16 buf_size = pack->ToBytes(buffer);
+	uint16_str crc;
+	crc.d = CHECK_SUM_CRC.GetCRC16(buffer, buf_size);
+	buffer[buf_size++] = crc.b[0];
+	buffer[buf_size++] = crc.b[1];
+
+	port.Write(buffer, buf_size);
+}
+
+
+
+COMHandler::RESULT COMHandler::Receive(const UserPack *pack) const
+{
+
+}
+
+

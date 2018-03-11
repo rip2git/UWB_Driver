@@ -1,0 +1,10 @@
+16:56:06 **** Incremental Build of configuration Debug for project UWB_Handler_v0001 ****
+Info: Internal Builder is used for build
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\COMPort.o" "..\\src\\COMPort.cpp" 
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\IniFiles.o" "..\\src\\IniFiles.cpp" 
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\TON.o" "..\\src\\TON.cpp" 
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\main.o" "..\\src\\main.cpp" 
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\UserPack.o" "..\\src\\UserPack.cpp" 
+g++ -O0 -g3 -Wall -c -fmessage-length=0 -o "src\\COMHandler.o" "..\\src\\COMHandler.cpp" 
+g++ -o UWB_Handler_v0001.exe "src\\COMHandler.o" "src\\COMPort.o" "src\\IniFiles.o" "src\\TON.o" "src\\UserPack.o" "src\\main.o" 
+Info: Nothing to build for UWB_Handler_v0001
