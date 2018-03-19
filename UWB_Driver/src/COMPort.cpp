@@ -80,7 +80,7 @@ void COMPort::Initialization(COMPort::InitializationStruct *initStr)
 		int res = tcsetattr(this->fd, TCSAFLUSH, &options);
 
 		if (res != -1) {
-			this->state = COMPort::OPENED;
+			this->state = COMPort::STATE::OPENED;
 		}
 	}
 #else

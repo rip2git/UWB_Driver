@@ -30,4 +30,8 @@
 *.exe
 *.out
 *.app
+
+#folders
+/RemoteSystemsTempFiles/
 /.metadata/
+

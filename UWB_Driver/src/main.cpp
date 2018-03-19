@@ -1,18 +1,17 @@
 
 #include "COMHandler.h"
 #include "main.h"
-#include <windows.h>
+#include <thread>
+#include <mutex>
 
 /// linker, misc
 /// -static-libgcc -static-libstdc++
 
 
-//#define Main_DEBUG_MODE
-
-
 #define POLL_PERIOD 	500
 
 
+std::mutex mu;
 unsigned char buf[128];
 unsigned char buf_size;
 unsigned int distance;
@@ -20,17 +19,14 @@ COMHandler hPort;
 COMHandler::RESULT opRes;
 
 
-
-DWORD WINAPI receive(CONST LPVOID lpParam)
-{
+void receive(void) {
 	UserPack upack;
 	cout << "***rd on" << endl;
-	HANDLE hMutex = (HANDLE)lpParam;
 
 	while (1) {
-		WaitForSingleObject(hMutex, INFINITE);
+		mu.try_lock();
 		opRes = hPort.Receive(&upack);
-		ReleaseMutex(hMutex);
+		mu.unlock();
 		if (opRes == COMHandler::RESULT::SUCCESS) {
 			if (upack.Command == UserPack::COMMAND::Status) {
 				cout << "ERROR: " << static_cast <int> (upack.DestinationID) << endl;
@@ -58,8 +54,6 @@ int main()
 		cout << "***error" << endl;
 
 
-	HANDLE hMutex = CreateMutex(NULL, FALSE, NULL);
-
 	t1.start(0);
 	while (1) {
 		switch (mainstate) {
@@ -68,10 +62,10 @@ int main()
 				upack.Command = UserPack::COMMAND::SetID;
 				upack.DestinationID = hPort.GetPortNumber() & 0x0F;
 				upack.TotalSize = 0;
-				WaitForSingleObject(hMutex, INFINITE);
+				mu.try_lock();
 				hPort.Send(&upack);
 				opRes = hPort.Receive(&upack);
-				ReleaseMutex(hMutex);
+				mu.unlock();
 
 				if (opRes == COMHandler::RESULT::SUCCESS) {
 					for (uint8 i = 0; i < upack.TotalSize; ++i)
@@ -87,30 +81,21 @@ int main()
 				upack.TotalSize = sizeof(poll_msg);
 				upack.SetData(poll_msg);
 
-				HANDLE thr = CreateThread(NULL, 0, &receive, &hMutex, DETACHED_PROCESS, NULL);
-				if (thr == INVALID_HANDLE_VALUE) {
-					cout << "***thread error" << endl;
-					cin >> buf;
-					exit(0);
-				}
-				Sleep(11);
+				std::thread thr(receive);
+				thr.detach();
+
+				CrossSleep(11);
 				cout << "***wr on" << endl;
 				mainstate = 2;
 			} break;
 			case 2:
 			{
 				//std::getline(cin, n);
-				Sleep(490);
-				WaitForSingleObject(hMutex, INFINITE);
+				CrossSleep(500);
+				mu.try_lock();
 				hPort.Send(&upack);
-#ifdef Main_DEBUG_MODE
-				opRes = hPort.Receive(&upack);
-				if (opRes == COMHandler::RESULT::SUCCESS)
-					cout << "***sended: " << t1.since() << endl;
-#else
 				cout << "***sended: " << t1.since() << endl;
-#endif
-				ReleaseMutex(hMutex);
+				mu.unlock();
 			} break;
 
 			default: // nop
