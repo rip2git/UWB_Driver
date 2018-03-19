@@ -1,15 +1,11 @@
 
 #include "IniFiles.h"
 
-
 #ifdef __linux__
 	#include <errno.h>
 #else
 	#include <windows.h>
 #endif
-
-
-typedef unsigned long qbyte_t;
 
 
 
@@ -40,10 +36,10 @@ void IniFile::Parse()
 	section.assign("DEFAULT");
 
 	bool alg_comment = 0, alg_section = 0;
-	qbyte_t s;
+	size_t s;
 	while (getline(this->file, line)) {
 		// -----------------------------------------------
-		// defines symbol with whch string is started
+		// defines symbol with which string is started
 		for (s = 0; s < line.size(); s++) {
 			if (line[s] != ' ' && line[s] != 9) {
 				alg_comment = (line[s] == '#');

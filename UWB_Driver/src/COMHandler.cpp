@@ -2,10 +2,19 @@
 #include "CheckSum.h"
 
 
+
 union uint16_str {
-	uint16 d;
-	uint8 b[2];
+	uint16_t d;
+	uint8_t b[2];
 };
+
+
+
+/*! ----------------------------------------------------------------------------------------
+ * @brief: Object for using
+ * -----------------------------------------------------------------------------------------
+ * */
+const CheckSum CHECK_SUM_CRC;
 
 
 
@@ -19,7 +28,7 @@ COMHandler::COMHandler()
 	init_str.timeOut.nChars = 0;
 
 	char pn[] = "COM1";
-	uint8 i;
+	uint8_t i;
 	for (i = 1; i < 10; ++i) {
 		pn[3] = i | 0x30;
 		init_str.portName = pn;
@@ -44,8 +53,8 @@ COMHandler::STATE COMHandler::GetState() const
 
 COMHandler::RESULT COMHandler::Send(const UserPack *pack) const
 {
-	uint8 buffer[UserPack::MAX_PACK_BYTE];
-	uint8 buf_size = pack->ToBytes(buffer);
+	uint8_t buffer[UserPack::MAX_PACK_BYTE];
+	uint8_t buf_size = pack->ToBytes(buffer);
 	uint16_str crc;
 	crc.d = CHECK_SUM_CRC.GetCRC16(buffer, buf_size);
 	buffer[buf_size++] = crc.b[0];
@@ -60,7 +69,7 @@ COMHandler::RESULT COMHandler::Send(const UserPack *pack) const
 
 COMHandler::RESULT COMHandler::Receive(UserPack *pack) const
 {
-	uint8 buffer[UserPack::MAX_PACK_BYTE];
+	uint8_t buffer[UserPack::MAX_PACK_BYTE];
 
 
 	pack->Reset();
@@ -72,7 +81,7 @@ COMHandler::RESULT COMHandler::Receive(UserPack *pack) const
 		res = this->port.Read(&(buffer[UserPack::DATA_OFFSET]), pack->TotalSize + 2); // read data + 2 crc
 		if (res == pack->TotalSize + 2) {
 			uint16_str crc;
-			uint8 buf_size = UserPack::DATA_OFFSET + pack->TotalSize;
+			uint8_t buf_size = UserPack::DATA_OFFSET + pack->TotalSize;
 			crc.d = CHECK_SUM_CRC.GetCRC16(buffer, buf_size);
 			if (crc.b[0] == buffer[buf_size] && crc.b[1] == buffer[buf_size + 1]) {
 				pack->ToStruct(buffer);
@@ -86,7 +95,7 @@ COMHandler::RESULT COMHandler::Receive(UserPack *pack) const
 
 
 
-uint8 COMHandler::GetPortNumber() const
+uint8_t COMHandler::GetPortNumber() const
 {
 	return this->portNumber;
 }

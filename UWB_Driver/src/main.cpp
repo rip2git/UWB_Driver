@@ -1,8 +1,6 @@
 
-#include "COMHandler.h"
 #include "main.h"
-#include <thread>
-#include <mutex>
+
 
 /// linker, misc
 /// -static-libgcc -static-libstdc++
