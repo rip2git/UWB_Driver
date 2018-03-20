@@ -3,9 +3,13 @@
 
 
 #include <stdint.h>
-
+#include <vector>
 
 #define UserPack_DEBUG_MODE
+
+#ifdef UserPack_DEBUG_MODE
+#include <fstream>
+#endif
 
 
 /*! ----------------------------------------------------------------------------------------
@@ -14,7 +18,7 @@
  * */
 struct UserPack {
 	/*! ------------------------------------------------------------------------------------
-	 * @brief:
+	 * @brief: according with IEEE Std 802.15.4-2011
 	 * -------------------------------------------------------------------------------------
 	 * */
 	enum class COMMAND : uint8_t {
@@ -40,9 +44,6 @@ struct UserPack {
 	 * -------------------------------------------------------------------------------------
 	 * */
 	static const uint8_t BROADCAST_ID = 0xFF;
-	static const uint8_t DATA_OFFSET = 3;
-	static const uint8_t MAX_DATA_SIZE = 127; // according with IEEE Std 802.15.4-2011
-	static const uint8_t MAX_PACK_BYTE = MAX_DATA_SIZE + DATA_OFFSET + 2;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
@@ -50,40 +51,41 @@ struct UserPack {
 	 * */
 	COMMAND Command;
 	uint8_t DestinationID;
-	uint8_t TotalSize;
-	uint8_t Data[MAX_DATA_SIZE];
+	std::vector <uint8_t> Data;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	uint8_t ToBytes(uint8_t *buffer) const;
+	virtual void ToBytes(std::vector <uint8_t> &buffer) const = 0;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ToStruct(const uint8_t *buffer);
+	virtual void ToStruct(const std::vector <uint8_t> &buffer) = 0;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void SetData(const uint8_t *buffer);
+	virtual void SetData(const std::vector <uint8_t> &buffer) = 0;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Reset();
+	virtual void Reset() = 0;
 
 #ifdef UserPack_DEBUG_MODE
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Print() const;
+	virtual void Print(std::ostream &os) const = 0;
 #endif
+
+	virtual ~UserPack() {};
 };
 
 

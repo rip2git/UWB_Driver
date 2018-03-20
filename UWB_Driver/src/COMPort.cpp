@@ -37,7 +37,7 @@ void COMPort::Initialization(COMPort::InitializationStruct *initStr)
 	this->baudRate = initStr->baudRate;
 	this->timeOut.Ms = initStr->timeOut.Ms;
 	this->timeOut.nChars = initStr->timeOut.nChars;
-	this->charsSpacing = static_cast <uint8> (
+	this->charsSpacing = static_cast <uint8_t> (
 		(8000.0 / static_cast <double> (this->baudRate)) * 10.0
 	);
 	this->charsSpacing += this->charsSpacing? 0 : 1;
@@ -214,7 +214,7 @@ bool COMPort::ChangeTimeOut(const TimeOutStruct *timeOut) const
 
 void COMPort::Flush() const
 {
-	uint8 buf;
+	uint8_t buf;
 	int res;
 	TimeOutStruct TOStr;
 	TOStr.Ms = 1;
@@ -293,7 +293,7 @@ int COMPort::GetLastSystemError() const
 
 
 
-int COMPort::ReadByte(uint8 *buf) const
+int COMPort::ReadByte(uint8_t *buf) const
 {
 	int res;
 #ifdef __linux__
@@ -327,7 +327,7 @@ int COMPort::ReadByte(uint8 *buf) const
 
 
 
-int COMPort::Read(uint8 *buf, uint8 buf_size) const
+int COMPort::Read(uint8_t *buf, uint8_t buf_size) const
 {
 	int res;
 #ifdef __linux__
@@ -362,7 +362,7 @@ int COMPort::Read(uint8 *buf, uint8 buf_size) const
 
 
 
-int COMPort::Write(const uint8 *buf, uint8 buf_size) const
+int COMPort::Write(const uint8_t *buf, uint8_t buf_size) const
 {
 	int res;
 #ifdef __linux__

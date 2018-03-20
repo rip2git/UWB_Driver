@@ -5,6 +5,13 @@
 #define MAIN_H
 
 
+#ifdef __linux__
+	#include <unistd.h>
+#else
+	#include <windows.h>
+#endif
+
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -14,18 +21,19 @@
 #include <ctime>
 #include <thread>
 #include <mutex>
-#include <stdint.h>
+#include <cstdint>
 
-#ifdef __linux__
-	#include <unistd.h>
-#else
-	#include <windows.h>
-#endif
 
+#include "CrossSleep.h"
 #include "TON.h"
 #include "COMHandler.h"
 #include "CheckDelegate.h"
 #include "ChangeDelegate.h"
+#include "IniFiles.h"
+#include "CFG.h"
+#include "Logger.h"
+#include "UserInterface.h"
+
 
 using std::cout;
 using std::cin;
@@ -34,27 +42,6 @@ using std::endl;
 using std::vector;
 using std::string;
 using std::map;
-
-typedef vector <uint8_t> ArrayOfBytes;
-
-// -------------------------------------------------------------------------------------
-namespace LOG_MODE {
-	const int OFF = 0;
-	const int CONSOLE = 1;
-	const int FILE = 2;
-};
-// -------------------------------------------------------------------------------------
-
-
-
-void CrossSleep(uint32_t ms)
-{
-#ifdef __linux__
-		usleep(ms * 1000);
-#else
-		Sleep(ms);
-#endif
-}
 
 
 
