@@ -71,11 +71,11 @@ void NamedPipe::Create()
 	std::wstring stemp = std::wstring(this->pipeName.begin(), this->pipeName.end());
 
 	if (this->mode == NamedPipe::MODE::WRITE) {
-		this->fd = CreateNamedPipe(stemp.c_str(), PIPE_ACCESS_OUTBOUND,
+		this->fd = CreateNamedPipeW(stemp.c_str(), PIPE_ACCESS_OUTBOUND,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
 			1, BUFFER_SIZE, BUFFER_SIZE, TIMEOUT, NULL);
 	} else {
-		this->fd = CreateNamedPipe(stemp.c_str(), PIPE_ACCESS_INBOUND,
+		this->fd = CreateNamedPipeW(stemp.c_str(), PIPE_ACCESS_INBOUND,
 			PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT,
 			1, BUFFER_SIZE, BUFFER_SIZE, TIMEOUT, NULL);
 	}
@@ -103,10 +103,10 @@ void NamedPipe::Open()
 #else
 	std::wstring stemp = std::wstring(this->pipeName.begin(), this->pipeName.end());
 	if (this->mode == NamedPipe::MODE::WRITE) {
-		this->fd = CreateFile(stemp.c_str(), GENERIC_WRITE,
+		this->fd = CreateFileW(stemp.c_str(), GENERIC_WRITE,
 			0, NULL, OPEN_EXISTING, 0, NULL);
 	} else {
-		this->fd = CreateFile(stemp.c_str(), GENERIC_READ,
+		this->fd = CreateFileW(stemp.c_str(), GENERIC_READ,
 			0, NULL, OPEN_EXISTING, 0, NULL);
 	}
 
