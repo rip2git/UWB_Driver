@@ -18,7 +18,7 @@ union uint16_str {
  * @brief: Object for using
  * -----------------------------------------------------------------------------------------
  * */
-const CheckSum checkSum;
+static const CheckSum checkSum;
 
 
 

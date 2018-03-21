@@ -1,11 +1,13 @@
 #ifndef USERINTF_H
 #define USERINTF_H
 
+
 #include <thread>
 #include <mutex>
 
 #include "NamedPipe.h"
 #include "UserPackHL.h"
+
 
 
 /*! ----------------------------------------------------------------------------------------
@@ -27,7 +29,7 @@ public:
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum MODE : uint8_t {
+	enum class MODE : uint8_t {
 		OPEN_EXISTING = 1,
 		CREATE_NEW
 	};

@@ -1,8 +1,10 @@
 #ifndef NAMEDPIPE_H
 #define NAMEDPIPE_H
 
+
 #include <stdint.h>
 #include <string>
+
 
 #ifdef __linux__
 	typedef uint32_t DWORD;
@@ -11,6 +13,8 @@
 	typedef unsigned long DWORD;
 	typedef void* HANDLE;
 #endif
+
+
 
 /*! ----------------------------------------------------------------------------------------
  * @brief: Interface for named pipe

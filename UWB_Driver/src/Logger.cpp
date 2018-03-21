@@ -2,6 +2,7 @@
 #include "Logger.h"
 
 
+
 Logger::~Logger()
 {
 	if (this->is_open())

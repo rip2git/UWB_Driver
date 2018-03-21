@@ -1,15 +1,5 @@
-
-#define _CRT_SECURE_NO_WARNINGS
-
 #ifndef MAIN_H
 #define MAIN_H
-
-
-#ifdef __linux__
-	#include <unistd.h>
-#else
-	#include <windows.h>
-#endif
 
 
 #include <iostream>

@@ -1,14 +1,15 @@
-#include "NamedPipe.h"
-#include "errno.h"
-#include "unistd.h"
-#include <signal.h>
-#include "TON.h"
-#include <fcntl.h>
-#include <sys/stat.h>
 
+#include "NamedPipe.h"
+#include "TON.h"
 
 #ifdef __linux__
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <sys/stat.h>
 #else
+#include <windows.h>
 #define BUFFER_SIZE 	2048
 #define TIMEOUT			5000
 #endif

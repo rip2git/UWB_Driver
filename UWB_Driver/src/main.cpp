@@ -1,11 +1,8 @@
-#define _CRT_SECURE_NO_WARNINGS
-
 #include "main.h"
 
 
 /// linker, misc
 /// -static-libgcc -static-libstdc++
-
 
 #define POLL_PERIOD 	500
 
