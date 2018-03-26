@@ -32,7 +32,7 @@ void Logger::toFile()
 	const size_t buf_size = 40;
 	size_t iter = 0;
 	char buf[buf_size];
-	std::string format = "%Y_%b_%d_%H:%M:%S_log";
+	std::string format = "%Y_%b_%d_%H.%M.%S_log";
 	time_t seconds = time(NULL);
 	tm *timeinfo = localtime(&seconds);
 	strftime(buf, buf_size, format.c_str(), timeinfo);
@@ -45,6 +45,8 @@ void Logger::toFile()
 	filename.resize(iter);
 	filename += ".txt";
 	this->open(filename.c_str(), std::ios_base::out);
+	if ( !this->is_open() )
+		exit(0);
 }
 
 

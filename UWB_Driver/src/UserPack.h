@@ -2,10 +2,10 @@
 #define USERPACK_H_
 
 
+#include "_DEBUG.h"
 #include <stdint.h>
 #include <vector>
 
-#define UserPack_DEBUG_MODE
 
 #ifdef UserPack_DEBUG_MODE
 #include <fstream>

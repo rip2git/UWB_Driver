@@ -1,6 +1,5 @@
 #include "main.h"
 
-
 /// linker, misc
 /// -static-libgcc -static-libstdc++
 
@@ -16,10 +15,35 @@ COMHandler hPort;
 COMHandler::RESULT opRes;
 
 
+
 void receive(void) {
 	UserPackFW upack;
 	LOG << "***rd on" << endl;
 
+
+#ifdef MAIN_DEBUG
+/* TODO: testing space. Include testing code here */
+	uint8_t c;
+	bool fl = false;
+	int res;
+	TON t1;
+	t1.start(0);
+	while (1) {
+		mu.try_lock();
+		res = hPort.GetPortDirectly().ReadByte(&c);
+		mu.unlock();
+		if (res == 1) {
+			if (fl) {
+				fl = false;
+				LOG << t1.since() / 1000 << "s " << t1.since() % 1000 << "ms ---> ";
+			}
+			LOG << static_cast<char>(c);
+			if (c == '\n')
+				fl = true;
+		}
+	}
+/* TODO: end of testing code*/
+#else
 	while (1) {
 		mu.try_lock();
 		opRes = hPort.Receive(&upack);
@@ -39,6 +63,7 @@ void receive(void) {
 			}
 		}
 	}
+#endif
 }
 
 
@@ -79,7 +104,6 @@ int main()
 		exit(0);
 	}
 
-
 	// switch logger --------------------------------------------------------------------------
 	switch (LM) {
 	case Logger::MODE::OFF:
@@ -111,17 +135,22 @@ int main()
 				upack.Command = UserPack::COMMAND::SetID;
 				upack.DestinationID = deviceID;
 				upack.TotalSize = 0;
-				mu.try_lock();
+
+#ifdef MAIN_DEBUG
+/* TODO: testing space. Include testing code here */
+				hPort.Send(&upack);
+				mainstate = 1;
+/* TODO: end of testing code*/
+#else
 				hPort.Send(&upack);
 				opRes = hPort.Receive(&upack);
-				mu.unlock();
-
 				if (opRes == COMHandler::RESULT::SUCCESS) {
 					for (uint8_t i = 0; i < upack.TotalSize; ++i)
 						LOG << upack.Data[i];
 					LOG << endl;
 					mainstate = 1;
 				}
+#endif
 			} break;
 			case 1:
 			{
@@ -134,7 +163,13 @@ int main()
 				thr.detach();
 
 				CrossSleep(11);
+#ifdef MAIN_DEBUG
+/* TODO: testing space. Include testing code here */
+				cout << "***wr on" << endl;
+/* TODO: end of testing code*/
+#else
 				LOG << "***wr on" << endl;
+#endif
 				mainstate = 2;
 			} break;
 			case 2:
@@ -142,7 +177,13 @@ int main()
 				CrossSleep(500);
 				mu.try_lock();
 				hPort.Send(&upack);
+#ifdef MAIN_DEBUG
+/* TODO: testing space. Include testing code here */
+				cout << "***sended: " << t1.since() << endl;
+/* TODO: end of testing code*/
+#else
 				LOG << "***sended: " << t1.since() << endl;
+#endif
 				mu.unlock();
 			} break;
 

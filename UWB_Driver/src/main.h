@@ -13,7 +13,7 @@
 #include <mutex>
 #include <cstdint>
 
-
+#include "_DEBUG.h"
 #include "CrossSleep.h"
 #include "TON.h"
 #include "COMHandler.h"

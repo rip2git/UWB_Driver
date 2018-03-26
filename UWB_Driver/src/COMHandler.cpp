@@ -129,3 +129,11 @@ uint8_t COMHandler::GetPortNumber() const
 }
 
 
+
+#ifdef COMHandler_DEBUG
+COMPort& COMHandler::GetPortDirectly() {
+	return this->port;
+}
+#endif
+
+
