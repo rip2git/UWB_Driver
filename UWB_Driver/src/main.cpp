@@ -69,6 +69,7 @@ void receive(void) {
 
 int main()
 {
+	char c = '0';
 	int mainstate = 0;
 	TON t1;
 	UserPackFW upack;
@@ -176,6 +177,11 @@ int main()
 			{
 				CrossSleep(500);
 				mu.try_lock();
+				//
+				upack.Data[0] = c;
+				c++;
+				if (c > '9') c = '0';
+				//
 				hPort.Send(&upack);
 #ifdef MAIN_DEBUG
 /* TODO: testing space. Include testing code here */
