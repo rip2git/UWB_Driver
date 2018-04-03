@@ -36,7 +36,7 @@ void NamedPipe::Initialization(const NamedPipe::InitializationStruct &initStr)
 	this->mode = initStr.mode;
 
 #ifdef __linux__
-	this->pipeName = "/tmp/" + initStr->pipeName;
+	this->pipeName = "/tmp/" + initStr.pipeName;
 #else
 	this->pipeName = "\\\\.\\pipe\\" + initStr.pipeName;
 #endif

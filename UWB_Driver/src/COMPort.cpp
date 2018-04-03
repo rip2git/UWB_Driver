@@ -42,7 +42,7 @@ void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 	);
 	this->charsSpacing += this->charsSpacing? 0 : 1;
 #ifdef __linux__
-	std::string fName = "/dev/tty" + initStr->portName;
+	std::string fName = "/dev/tty" + initStr.portName;
 	this->fd = open(fName.c_str(), O_RDWR | O_NOCTTY);
 	if (this->fd != -1) {
 		termios options;
