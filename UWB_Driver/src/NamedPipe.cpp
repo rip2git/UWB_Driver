@@ -23,22 +23,22 @@ NamedPipe::NamedPipe()
 
 
 
-NamedPipe::NamedPipe(NamedPipe::InitializationStruct *initStr)
+NamedPipe::NamedPipe(const NamedPipe::InitializationStruct &initStr)
 {
 	this->Initialization(initStr);
 }
 
 
 
-void NamedPipe::Initialization(NamedPipe::InitializationStruct *initStr)
+void NamedPipe::Initialization(const NamedPipe::InitializationStruct &initStr)
 {
 	this->state = NamedPipe::STATE::CLOSED;
-	this->mode = initStr->mode;
+	this->mode = initStr.mode;
 
 #ifdef __linux__
 	this->pipeName = "/tmp/" + initStr->pipeName;
 #else
-	this->pipeName = "\\\\.\\pipe\\" + initStr->pipeName;
+	this->pipeName = "\\\\.\\pipe\\" + initStr.pipeName;
 #endif
 
 	this->state = NamedPipe::STATE::INITIALIZED;

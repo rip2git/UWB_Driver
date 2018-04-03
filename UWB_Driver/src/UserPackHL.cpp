@@ -32,7 +32,6 @@ void UserPackHL::SetData(const std::vector <uint8_t> &buffer)
 {
 	this->TotalSize = buffer.size();
 	this->Data.assign(buffer.begin(), buffer.end());
-
 }
 
 
@@ -43,6 +42,17 @@ void UserPackHL::Reset()
 	this->DestinationID = static_cast <uint8_t> (UserPackHL::STATUS::Reserved);
 	this->TotalSize = 0;
 	this->Data.clear();
+}
+
+
+
+UserPackHL& UserPackHL::operator= (const UserPackHL &pack)
+{
+	this->Command = pack.Command;
+	this->DestinationID = pack.DestinationID;
+	this->TotalSize = pack.TotalSize;
+	this->Data = pack.Data;
+	return *this;
 }
 
 

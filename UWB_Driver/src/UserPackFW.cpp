@@ -45,6 +45,17 @@ void UserPackFW::Reset()
 
 
 
+UserPackFW& UserPackFW::operator= (const UserPackFW &pack)
+{
+	this->Command = pack.Command;
+	this->DestinationID = pack.DestinationID;
+	this->TotalSize = pack.TotalSize;
+	this->Data = pack.Data;
+	return *this;
+}
+
+
+
 #ifdef UserPack_DEBUG_MODE
 using std::endl;
 using std::hex;

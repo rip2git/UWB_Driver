@@ -56,7 +56,7 @@ void COMHandler::Initialization()
 		init_str.timeOut.Ms = 10;
 		init_str.timeOut.nChars = 0;
 
-		this->port.Initialization(&init_str);
+		this->port.Initialization(init_str);
 
 		if (this->port.GetState() == COMPort::STATE::OPENED) {
 			this->portNumber = (pn.size() == 4)? atoi( pn.substr(3,1).c_str() ) : atoi( pn.substr(3,2).c_str() );
@@ -77,10 +77,10 @@ COMHandler::STATE COMHandler::GetState() const
 
 
 
-COMHandler::RESULT COMHandler::Send(const UserPackFW *pack) const
+COMHandler::RESULT COMHandler::Send(const UserPackFW &pack) const
 {
 	std::vector <uint8_t> buffer;
-	pack->ToBytes(buffer);
+	pack.ToBytes(buffer);
 	uint16_str crc;
 	crc.d = checkSum.GetCRC16( &(buffer[0]), buffer.size() );
 	buffer.push_back(crc.b[0]);
@@ -94,25 +94,25 @@ COMHandler::RESULT COMHandler::Send(const UserPackFW *pack) const
 
 
 
-COMHandler::RESULT COMHandler::Receive(UserPackFW *pack) const
+COMHandler::RESULT COMHandler::Receive(UserPackFW &pack) const
 {
 	std::vector <uint8_t> buffer;
 	buffer.resize(UserPackFW::DATA_OFFSET);
 
-	pack->Reset();
+	pack.Reset();
 
 	int res = this->port.Read( &(buffer[0]), UserPackFW::DATA_OFFSET ); // read header
 	if (res == UserPackFW::DATA_OFFSET) {
-		pack->TotalSize = buffer[2];
-		buffer.resize(UserPackFW::DATA_OFFSET + pack->TotalSize + 2); // saves content
+		pack.TotalSize = buffer[2];
+		buffer.resize(UserPackFW::DATA_OFFSET + pack.TotalSize + 2); // saves content
 
-		res = this->port.Read( &(buffer[UserPackFW::DATA_OFFSET]), pack->TotalSize + 2 ); // read data + 2 crc
-		if (res == pack->TotalSize + 2) {
+		res = this->port.Read( &(buffer[UserPackFW::DATA_OFFSET]), pack.TotalSize + 2 ); // read data + 2 crc
+		if (res == pack.TotalSize + 2) {
 			uint16_str crc;
-			uint8_t buf_size = UserPackFW::DATA_OFFSET + pack->TotalSize;
+			uint8_t buf_size = UserPackFW::DATA_OFFSET + pack.TotalSize;
 			crc.d = checkSum.GetCRC16( &(buffer[0]), buf_size );
 			if (crc.b[0] == buffer[buf_size] && crc.b[1] == buffer[buf_size + 1]) {
-				pack->ToStruct(buffer);
+				pack.ToStruct(buffer);
 				return COMHandler::RESULT::SUCCESS;
 			}
 		}

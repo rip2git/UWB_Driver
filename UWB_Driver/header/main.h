@@ -2,6 +2,7 @@
 #define MAIN_H
 
 
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -23,6 +24,8 @@
 #include "CFG.h"
 #include "Logger.h"
 #include "UserInterface.h"
+#include "UserPacksConverter.h"
+#include "ConfigFW.h"
 
 
 using std::cout;

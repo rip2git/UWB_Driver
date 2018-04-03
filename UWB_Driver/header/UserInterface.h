@@ -1,31 +1,26 @@
-#ifndef COMPort_H
-#define COMPort_H
+#ifndef USERINTF_H
+#define USERINTF_H
 
 
-#include <stdint.h>
+#include <thread>
+#include <mutex>
 
-
-#ifdef __linux__
-	typedef uint32_t DWORD;
-	typedef int HANDLE;
-#else
-	typedef unsigned long DWORD;
-	typedef void* HANDLE;
-#endif
+#include "NamedPipe.h"
+#include "UserPackHL.h"
 
 
 
 /*! ----------------------------------------------------------------------------------------
- * @brief: Interface between driver and hard devices
+ * @brief: Provides UI through named pipes. Creates 2 pipes for reading and writing.
  * -----------------------------------------------------------------------------------------
  * */
-class COMPort {
+class UserInterface {
 public:
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class STATE {
+	enum class STATE : uint8_t {
 		CLOSED = 0,
 		OPENED
 	};
@@ -34,157 +29,123 @@ public:
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	struct TimeOutStruct {
-		DWORD Ms;
-		DWORD nChars;
+	enum class MODE : uint8_t {
+		OPEN_EXISTING = 1,
+		CREATE_NEW
 	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	struct InitializationStruct {
-		char *portName;
-		DWORD baudRate;
-		TimeOutStruct timeOut;
+	enum class CONNTYPE : uint8_t {
+		DUPLEX = 1,
+		SIMPLEX_RD,
+		SIMPLEX_WR
 	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	COMPort();
-	COMPort(InitializationStruct *initStr);
+	enum class RESULT {
+		ERROR = -1,
+		SUCCESS
+	};
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls Close
+	 * @brief: Sets mode and calls initialization
 	 * -------------------------------------------------------------------------------------
 	 * */
-	~COMPort();
+	UserInterface(UserInterface::MODE mode, UserInterface::CONNTYPE connectionType);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief:
+	 * @brief: Calls close
 	 * -------------------------------------------------------------------------------------
 	 * */
-	COMPort::STATE GetState() const;
+	~UserInterface();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Closes file descriptor
+	 * @brief: Reads user data from pipe
+	 * -------------------------------------------------------------------------------------
+	 * */
+	UserInterface::RESULT Read(UserPackHL &pack);
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Writes user data to pipe
+	 * -------------------------------------------------------------------------------------
+	 * */
+	UserInterface::RESULT Write(const UserPackHL &pack);
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Returns false if the pipe was broken, but is ready now - catches thread.
+	 * Checks only rd_pipe (wr_pipe is depended, and isn't checkable): doesn't work
+	 * when using DUPLEX::HALF_WR
+	 * -------------------------------------------------------------------------------------
+	 * */
+	bool CheckWorkingCapacity();
+
+private:
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Interfaces between driver and higher layer
+	 * -------------------------------------------------------------------------------------
+	 * */
+	NamedPipe rd_pipe, wr_pipe;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Mode of UI: open existing pipes or create new
+	 * -------------------------------------------------------------------------------------
+	 * */
+	UserInterface::MODE mode;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Mode of UI: create / open one (read or write) or two (read and write) pipes
+	 * -------------------------------------------------------------------------------------
+	 * */
+	UserInterface::CONNTYPE connectionType;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Inits threads, mutexes and detaches *_thr
+	 * -------------------------------------------------------------------------------------
+	 * */
+	void Initialization();
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Destroy pipes, theads and mutexes
 	 * -------------------------------------------------------------------------------------
 	 * */
 	void Close();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Flush by OS abilities
+	 * @brief: Calls Close and Initialization
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool FastFlush() const;
+	void ReOpen();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Slow flush: doing fast flush, gets delay = charsSpacing and tries to read
-	 * byte. If last is failed when return true, else repeats from the beginning.
-	 * Changes timeOut for its own purposes. Returns timeOut before return from call
+	 * @brief: Used by *_thr to open pipes in any order
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Flush() const;
+	std::mutex rd_mutex, wr_mutex;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns current time out
+	 * @brief: Threads for initialization of pipes
 	 * -------------------------------------------------------------------------------------
 	 * */
-	const TimeOutStruct* GetCurrentTimeOut() const;
+	std::thread rd_thr, wr_thr;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief:
+	 * @brief: Creates read pipe (opens existing or creates new)
 	 * -------------------------------------------------------------------------------------
 	 * */
-	int GetAvailableBytesOfRecvBuf() const;
+	void rdCreate();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Sets timeOut and calls ChangeTimeOut
+	 * @brief: Creates write pipe (opens existing or creates new)
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool SetTimeOut(const TimeOutStruct *timeOut);
+	void wrCreate();
 
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void Initialization(InitializationStruct *initStr);
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Reads data from buffer (behavior is dependent on parameters of ChangeTimeOut);
-	 * Returns received bytes (0:n) or failure (-1)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	int Read(uint8_t *buffer, uint8_t buffer_size) const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Reads one byte from buffer (behavior is dependent on parameters of
-	 * ChangeTimeOut);
-	 * Returns received bytes (0:1) or failure (-1)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	int ReadByte(uint8_t *buffer) const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Writes data to buffer (up to 256 bytes per write) / transfers data as is
-	 * Returns transfered (n) bytes or failure (-1)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	int Write(const uint8_t *buffer, uint8_t buffer_size) const;
-	int Write(const char *buffer) const;
-
-private:
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: File descriptor / used by OS
-	 * -------------------------------------------------------------------------------------
-	 * */
-	HANDLE fd;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	COMPort::STATE state;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	DWORD baudRate;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Current time out
-	 * -------------------------------------------------------------------------------------
-	 * */
-	TimeOutStruct timeOut;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: length of 10 bytes in ms
-	 * -------------------------------------------------------------------------------------
-	 * */
-	uint8_t charsSpacing;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Checks port for system errors / close if it was detected
-	 * -------------------------------------------------------------------------------------
-	 * */
-	bool GetStatus() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Resets errno
-	 * -------------------------------------------------------------------------------------
-	 * */
-	int GetLastSystemError() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Changes the algorithm for receiving data:
-	 * User sets time out to read data and number of chars which should be received;
-	 * Reset errno
-	 * -------------------------------------------------------------------------------------
-	 * */
-	bool ChangeTimeOut(const TimeOutStruct *timeOut) const;
 };
 
 

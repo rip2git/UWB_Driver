@@ -1,65 +1,73 @@
-#ifndef USERPACKFW_H_
-#define USERPACKFW_H_
+#ifndef CONFIGFW_H_
+#define CONFIGFW_H_
 
 
-#include "UserPack.h"
+#include "UserPackFW.h"
 
-// TODO: to HL
+
 
 /*! ----------------------------------------------------------------------------------------
  * @brief:
  * -----------------------------------------------------------------------------------------
  * */
-struct UserPackFW : public UserPack {
+struct ConfigFW {
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	uint8_t TotalSize;
+	enum class STATE {
+		ERROR = -1,
+		AVAILABLE
+	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	static const uint8_t DATA_OFFSET = 2 + sizeof(TotalSize);
-	static const uint16_t MAX_DATA_SIZE =
-			((1 << (2*sizeof(TotalSize))) - 1) - DATA_OFFSET - 2;
-	static const uint16_t MAX_PACK_BYTE =
-			static_cast <uint16_t> (MAX_DATA_SIZE + DATA_OFFSET + 2);
+	const uint8_t configSize = 12;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ToBytes(std::vector <uint8_t> &buffer) const;
+	struct SW1000_Str {
+		uint16_t 	DeviceID;
+		uint16_t 	PAN_ID;
+		uint8_t		nDevices;
+		uint16_t	PollingPeriod;
+	} SW1000;
+	struct Token_Str {
+		uint8_t		TimeSlotDurationMs;
+	} Token;
+	struct Ranging_Str {
+		uint16_t	RespondingDelay;
+		uint16_t	FinalDelay;
+	} Ranging;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ToStruct(const std::vector <uint8_t> &buffer);
+	void ToUserPackFW(UserPackFW &pack);
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void SetData(const std::vector <uint8_t> &buffer);
+	ConfigFW();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Reset();
+	ConfigFW::STATE GetState() const;
+private:
 
-#ifdef UserPack_DEBUG_MODE
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Print(std::ostream &os) const;
-#endif
+	ConfigFW::STATE state;
 };
 
-
-
-#endif /* USERPACKFW_H_ */
+#endif /* CONFIGFW_H_ */

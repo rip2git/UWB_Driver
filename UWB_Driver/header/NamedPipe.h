@@ -1,27 +1,44 @@
-#ifndef USERINTF_H
-#define USERINTF_H
+#ifndef NAMEDPIPE_H
+#define NAMEDPIPE_H
 
 
-#include <thread>
-#include <mutex>
+#include <stdint.h>
+#include <string>
 
-#include "NamedPipe.h"
-#include "UserPackHL.h"
+
+#ifdef __linux__
+	typedef uint32_t DWORD;
+	typedef int HANDLE;
+#else
+	typedef unsigned long DWORD;
+	typedef void* HANDLE;
+#endif
 
 
 
 /*! ----------------------------------------------------------------------------------------
- * @brief: Provides UI through named pipes. Creates 2 pipes for reading and writing.
+ * @brief: Interface for named pipe
  * -----------------------------------------------------------------------------------------
  * */
-class UserInterface {
+class NamedPipe {
 public:
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	enum class MODE : uint8_t {
+		READ = 1,
+		WRITE
+	};
+
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
 	enum class STATE : uint8_t {
 		CLOSED = 0,
+		INITIALIZED,
 		OPENED
 	};
 
@@ -29,113 +46,126 @@ public:
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class MODE : uint8_t {
-		OPEN_EXISTING = 1,
-		CREATE_NEW
+	struct InitializationStruct {
+		std::string pipeName;
+		NamedPipe::MODE mode;
 	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class RESULT {
-		ERROR = -1,
-		SUCCESS
-	};
+	NamedPipe();
+	NamedPipe(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Sets mode and calls initialization
+	 * Calls close
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface(UserInterface::MODE mode);
+	~NamedPipe();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls close
+	 * @brief: Reads config file and sets parameters
 	 * -------------------------------------------------------------------------------------
 	 * */
-	~UserInterface();
+	void Initialization(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Reads user data from pipe
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface::RESULT Read(UserPackHL *pack);
+	NamedPipe::STATE GetState() const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Writes user data to pipe
-	 * -------------------------------------------------------------------------------------
-	 * */
-	UserInterface::RESULT Write(const UserPackHL *pack);
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns false if pipe was broken, but is ready now - catches thread
-	 * checks only rd_pipe (wr_pipe is depended, and isn't checkable)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	bool CheckWorkingCapacity();
-
-private:
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Interfaces between driver and higher layer
-	 * -------------------------------------------------------------------------------------
-	 * */
-	NamedPipe rd_pipe, wr_pipe;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Mode of UI: open existing pipes or create new
-	 * -------------------------------------------------------------------------------------
-	 * */
-	UserInterface::MODE mode;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Inits threads, mutexes and detaches *_thr
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void Initialization();
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Destroy pipes, theads and mutexes
+	 * @brief: Close and destroy pipe
 	 * -------------------------------------------------------------------------------------
 	 * */
 	void Close();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls Close and Initialization
+	 * @brief: Check pipe for errors / only pipe with PM_READ mode can be checked -
+	 * checks read ability
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ReOpen();
+	bool CheckWorkingCapacity() const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Waiting for pipes creating
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Wait();
+	DWORD GetLastErrCode() const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Used by *_thr to open pipes in any order
+	 * @brief: Creates pipe and catches thread for client
 	 * -------------------------------------------------------------------------------------
 	 * */
-	std::mutex rd_mutex, wr_mutex;
+	void Create();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Threads for initialization of pipes
+	 * @brief: Open existing pipe
 	 * -------------------------------------------------------------------------------------
 	 * */
-	std::thread rd_thr, wr_thr;
+	void Open();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Creates read pipe (opens existing or creates new)
+	 * @brief: Returns
+	 * 		- number of bytes were read
+	 * 		- 0 if receiver buffer is empty
+	 * 		- -1 if operation is failed
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void rdCreate();
+	int Read(uint8_t *buffer, DWORD buf_size) const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Creates write pipe (opens existing or creates new)
+	 * @brief: Transfers buf as is.
+	 * Returns -1 if operation is failed
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void wrCreate();
+	int Write(const uint8_t *buffer, DWORD buf_size) const;
 
+private:
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	enum class INSTANCE_TYPE : uint8_t {
+		OPENING = 1,
+		CREATING
+	};
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: File descriptor / used by OS
+	 * -------------------------------------------------------------------------------------
+	 * */
+	HANDLE fd;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: System name of pipe. Used by Open / Create
+	 * -------------------------------------------------------------------------------------
+	 * */
+	std::string pipeName;
+
+	/*! ------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
+	 * */
+	NamedPipe::MODE mode;
+
+	/*! ------------------------------------------------------------------------------------
+	 * -------------------------------------------------------------------------------------
+	 * */
+	NamedPipe::STATE state;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Defines type for this exemplar / used inside
+	 * -------------------------------------------------------------------------------------
+	 * */
+	NamedPipe::INSTANCE_TYPE instanceType;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Resets errno
+	 * -------------------------------------------------------------------------------------
+	 * */
+	int GetLastSystemError() const;
 };
-
 
 #endif

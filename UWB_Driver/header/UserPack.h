@@ -1,65 +1,94 @@
-#ifndef USERPACKHL_H_
-#define USERPACKHL_H_
+#ifndef USERPACK_H_
+#define USERPACK_H_
 
 
-#include "UserPack.h"
+#include "_DEBUG.h"
+#include <stdint.h>
+#include <vector>
 
-// TODO: to FW
+
+#ifdef UserPack_DEBUG_MODE
+#include <fstream>
+#endif
+
+
 
 /*! ----------------------------------------------------------------------------------------
  * @brief:
  * -----------------------------------------------------------------------------------------
  * */
-struct UserPackHL : public UserPack {
+struct UserPack {
 	/*! ------------------------------------------------------------------------------------
-	 * @brief:
+	 * @brief: according with IEEE Std 802.15.4-2011
 	 * -------------------------------------------------------------------------------------
 	 * */
-	uint16_t TotalSize;
+	enum class COMMAND : uint8_t {
+		Status = 0,
+		SetConfig,
+		Distance,
+		Data
+	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	static const uint8_t DATA_OFFSET = 2 + sizeof(TotalSize);
-	static const uint16_t MAX_DATA_SIZE =
-			((1 << (2*sizeof(TotalSize))) - 1) - DATA_OFFSET - 2;
-	static const uint16_t MAX_PACK_BYTE =
-			static_cast <uint16_t> (MAX_DATA_SIZE + DATA_OFFSET);
+	enum class STATUS : uint8_t {
+		Reserved = 0,
+		SetConfig,
+		Distance,
+		Data
+	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ToBytes(std::vector <uint8_t> &buffer) const;
+	static const uint8_t BROADCAST_ID = 0xFF;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ToStruct(const std::vector <uint8_t> &buffer);
+	COMMAND Command;
+	uint8_t DestinationID;
+	std::vector <uint8_t> Data;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void SetData(const std::vector <uint8_t> &buffer);
+	virtual void ToBytes(std::vector <uint8_t> &buffer) const = 0;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Reset();
+	virtual void ToStruct(const std::vector <uint8_t> &buffer) = 0;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	virtual void SetData(const std::vector <uint8_t> &buffer) = 0;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	virtual void Reset() = 0;
 
 #ifdef UserPack_DEBUG_MODE
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Print(std::ostream &os) const;
+	virtual void Print(std::ostream &os) const = 0;
 #endif
+
+	virtual ~UserPack() {};
 };
 
 
 
-#endif /* USERPACKHL_H_ */
+#endif /* USERPACK_H_ */

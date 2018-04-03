@@ -23,27 +23,26 @@ COMPort::COMPort()
 
 
 
-COMPort::COMPort(InitializationStruct *initStr)
+COMPort::COMPort(const InitializationStruct &initStr)
 {
 	this->Initialization(initStr);
 }
 
 
 
-void COMPort::Initialization(COMPort::InitializationStruct *initStr)
+void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 {
 	this->state = COMPort::STATE::CLOSED;
 	//
-	this->baudRate = initStr->baudRate;
-	this->timeOut.Ms = initStr->timeOut.Ms;
-	this->timeOut.nChars = initStr->timeOut.nChars;
+	this->baudRate = initStr.baudRate;
+	this->timeOut.Ms = initStr.timeOut.Ms;
+	this->timeOut.nChars = initStr.timeOut.nChars;
 	this->charsSpacing = static_cast <uint8_t> (
 		(8000.0 / static_cast <double> (this->baudRate)) * 10.0
 	);
 	this->charsSpacing += this->charsSpacing? 0 : 1;
 #ifdef __linux__
-	std::string fName = "/dev/tty";
-	fName.append(initStr->portName);
+	std::string fName = "/dev/tty" + initStr->portName;
 	this->fd = open(fName.c_str(), O_RDWR | O_NOCTTY);
 	if (this->fd != -1) {
 		termios options;
@@ -84,8 +83,7 @@ void COMPort::Initialization(COMPort::InitializationStruct *initStr)
 		}
 	}
 #else
-	std::string stemp(initStr->portName);
-	std::wstring wstemp = std::wstring(stemp.begin(), stemp.end());
+	std::wstring wstemp = std::wstring(initStr.portName.begin(), initStr.portName.end());
 	LPCWSTR fName = wstemp.c_str();
 
 	// FileName, AccessFlags, ShareMode, SecurityAttributes,
@@ -104,7 +102,7 @@ void COMPort::Initialization(COMPort::InitializationStruct *initStr)
 			dcbSerialParams.Parity = NOPARITY;
 
 			if (SetCommState(this->fd, &dcbSerialParams) &&
-				this->ChangeTimeOut(&this->timeOut)
+				this->ChangeTimeOut(this->timeOut)
 			) {
 				this->state = COMPort::STATE::OPENED;
 			}
@@ -123,9 +121,9 @@ COMPort::~COMPort()
 
 
 
-const COMPort::TimeOutStruct* COMPort::GetCurrentTimeOut() const
+const COMPort::TimeOutStruct& COMPort::GetCurrentTimeOut() const
 {
-	return &this->timeOut;
+	return this->timeOut;
 }
 
 
@@ -166,24 +164,24 @@ COMPort::STATE COMPort::GetState() const
 
 
 
-bool COMPort::SetTimeOut(const TimeOutStruct *timeOut)
+bool COMPort::SetTimeOut(const TimeOutStruct &timeOut)
 {
-	this->timeOut.Ms = timeOut->Ms;
-	this->timeOut.nChars = timeOut->nChars;
+	this->timeOut.Ms = timeOut.Ms;
+	this->timeOut.nChars = timeOut.nChars;
 	return ChangeTimeOut(timeOut);
 }
 
 
 
-bool COMPort::ChangeTimeOut(const TimeOutStruct *timeOut) const
+bool COMPort::ChangeTimeOut(const TimeOutStruct &timeOut) const
 {
 #ifdef __linux__
 	termios options;
 	tcgetattr(this->fd, &options);
-	if (options.c_cc[VMIN] == timeOut->nChars && options.c_cc[VTIME] == timeOut->Ms / 100)
+	if (options.c_cc[VMIN] == timeOut.nChars && options.c_cc[VTIME] == timeOut.Ms / 100)
 		return 1;
-	options.c_cc[VMIN] = timeOut->nChars;
-	options.c_cc[VTIME] = timeOut->Ms / 100;
+	options.c_cc[VMIN] = timeOut.nChars;
+	options.c_cc[VTIME] = timeOut.Ms / 100;
 	int res = tcsetattr(this->fd, TCSADRAIN, &options);
 	return (res != -1);
 #else
@@ -198,7 +196,7 @@ bool COMPort::ChangeTimeOut(const TimeOutStruct *timeOut) const
 		CommTimeOuts.WriteTotalTimeoutConstant = 0;*/
 		CommTimeOuts.ReadIntervalTimeout = this->charsSpacing;
 		CommTimeOuts.ReadTotalTimeoutMultiplier = 0;
-		CommTimeOuts.ReadTotalTimeoutConstant = timeOut->Ms;
+		CommTimeOuts.ReadTotalTimeoutConstant = timeOut.Ms;
 		CommTimeOuts.WriteTotalTimeoutMultiplier = 0;
 		CommTimeOuts.WriteTotalTimeoutConstant = 0;
 
@@ -219,7 +217,7 @@ void COMPort::Flush() const
 	TimeOutStruct TOStr;
 	TOStr.Ms = 1;
 	TOStr.nChars = 0;
-	this->ChangeTimeOut(&TOStr);
+	this->ChangeTimeOut(TOStr);
 	while (1) {
 		this->FastFlush();
 #ifdef __linux__
@@ -234,7 +232,7 @@ void COMPort::Flush() const
 		if (res == 0)
 			break;
 	}
-	this->ChangeTimeOut(&this->timeOut);
+	this->ChangeTimeOut(this->timeOut);
 	return;
 }
 
@@ -301,13 +299,12 @@ int COMPort::ReadByte(uint8_t *buf) const
 	timeval tv;
 	fd_set rfds;
 	//
-	const TimeOutStruct *TO = this->GetCurrentTimeOut();
-	tv.tv_sec = TO->Ms / 1000;
-	tv.tv_usec = (TO->Ms % 1000) * 1000;
+	tv.tv_sec = this->timeOut.Ms / 1000;
+	tv.tv_usec = (this->timeOut.Ms % 1000) * 1000;
 	TOStr.Ms = 0;
 	TOStr.nChars = 1;
 	//
-	this->ChangeTimeOut(&TOStr);
+	this->ChangeTimeOut(TOStr);
 	//
 	FD_ZERO(&rfds);
 	FD_SET(this->fd, &rfds);
@@ -335,14 +332,13 @@ int COMPort::Read(uint8_t *buf, uint8_t buf_size) const
 	timeval tv;
 	fd_set rfds;
 	//
-	const TimeOutStruct *TO = this->GetCurrentTimeOut();
-	tv.tv_sec = TO->Ms / 1000;
-	tv.tv_usec = (TO->Ms % 1000) * 1000;
+	tv.tv_sec = this->timeOut.Ms / 1000;
+	tv.tv_usec = (this->timeOut.Ms % 1000) * 1000;
 	TOStr.Ms = 0;
 	TOStr.nChars = buf_size;
 	//
 	// should be VT = 0 and VM > 0 for RM !!!
-	this->ChangeTimeOut(&TOStr);
+	this->ChangeTimeOut(TOStr);
 	//
 	FD_ZERO(&rfds);
 	FD_SET(this->fd, &rfds);
@@ -377,16 +373,16 @@ int COMPort::Write(const uint8_t *buf, uint8_t buf_size) const
 
 
 
-int COMPort::Write(const char *buffer) const
+int COMPort::Write(std::string buffer) const
 {
 	int res;
 	size_t buf_size = 0;
 	while (buffer[buf_size] != '\0') ++buf_size;
 	#ifdef __linux__
-		res = write(this->fd, buffer, buf_size);
+		res = write(this->fd, &(buffer[0]), buf_size);
 	#else
 		DWORD bytes_written;
-		res = WriteFile(this->fd, buffer, buf_size, &bytes_written, 0);
+		res = WriteFile(this->fd, &(buffer[0]), buf_size, &bytes_written, 0);
 		res = (res != 0)? static_cast <int> (bytes_written) : -1;
 	#endif
 		return res;

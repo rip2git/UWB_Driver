@@ -59,17 +59,17 @@ void IniFile::Parse()
 				section.push_back(line[s]);
 			}
 			alg_section = false;
-		// string containes pair (key, value)
+		// string contains pair (key, value)
 		} else if (line.size() > 2) { // min 'x=y'
 			do { // key
-				if (line[s] != ' ' && line[s] != '\r')
+				if (line[s] != ' ' && line[s] != '\t' && line[s] != '\r')
 					key.push_back(line[s]);
 			} while (++s < line.size() && line[s] != '=');
 			do { // value
 				if (line[s] == '#' || line[s] == ';') {
 					break;
 				}
-				if (line[s] != ' ' && line[s] != 0x09 && line[s] != '=' && line[s] != '\r')
+				if (line[s] != ' ' && line[s] != '\t' && line[s] != '=' && line[s] != '\r')
 					value.push_back(line[s]);
 			} while (++s < line.size());
 		}

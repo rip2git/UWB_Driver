@@ -1,5 +1,5 @@
-#ifndef NAMEDPIPE_H
-#define NAMEDPIPE_H
+#ifndef COMPort_H
+#define COMPort_H
 
 
 #include <stdint.h>
@@ -17,28 +17,17 @@
 
 
 /*! ----------------------------------------------------------------------------------------
- * @brief: Interface for named pipe
+ * @brief: Interface between driver and hard devices
  * -----------------------------------------------------------------------------------------
  * */
-class NamedPipe {
+class COMPort {
 public:
-
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class MODE : uint8_t {
-		READ = 1,
-		WRITE
-	};
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	enum class STATE : uint8_t {
+	enum class STATE {
 		CLOSED = 0,
-		INITIALIZED,
 		OPENED
 	};
 
@@ -46,93 +35,108 @@ public:
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	struct InitializationStruct {
-		std::string pipeName;
-		NamedPipe::MODE mode;
+	struct TimeOutStruct {
+		DWORD Ms;
+		DWORD nChars;
 	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	NamedPipe();
-	NamedPipe(InitializationStruct *initStr);
-
-	/*! ------------------------------------------------------------------------------------
-	 * Calls close
-	 * -------------------------------------------------------------------------------------
-	 * */
-	~NamedPipe();
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Reads config file and sets parameters
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void Initialization(InitializationStruct *initStr);
+	struct InitializationStruct {
+		std::string portName;
+		DWORD baudRate;
+		TimeOutStruct timeOut;
+	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	NamedPipe::STATE GetState() const;
+	COMPort();
+	COMPort(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Close and destroy pipe
+	 * @brief: Calls Close
+	 * -------------------------------------------------------------------------------------
+	 * */
+	~COMPort();
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	COMPort::STATE GetState() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Closes file descriptor
 	 * -------------------------------------------------------------------------------------
 	 * */
 	void Close();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Check pipe for errors / only pipe with PM_READ mode can be checked -
-	 * checks read ability
+	 * @brief: Flush by OS abilities
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool CheckWorkingCapacity() const;
+	bool FastFlush() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Slow flush: doing fast flush, gets delay = charsSpacing and tries to read
+	 * byte. If last is failed when return true, else repeats from the beginning.
+	 * Changes timeOut for its own purposes. Returns timeOut before return from call
+	 * -------------------------------------------------------------------------------------
+	 * */
+	void Flush() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Returns current time out
+	 * -------------------------------------------------------------------------------------
+	 * */
+	const TimeOutStruct& GetCurrentTimeOut() const;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	DWORD GetLastErrCode() const;
+	int GetAvailableBytesOfRecvBuf() const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Creates pipe and catches thread for client
+	 * @brief: Sets timeOut and calls ChangeTimeOut
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Create();
+	bool SetTimeOut(const TimeOutStruct &timeOut);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Open existing pipe
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Open();
+	void Initialization(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns
-	 * 		- number of bytes were read
-	 * 		- 0 if receiver buffer is empty
-	 * 		- -1 if operation is failed
+	 * @brief: Reads data from buffer (behavior is dependent on parameters of ChangeTimeOut);
+	 * Returns received bytes (0:n) or failure (-1)
 	 * -------------------------------------------------------------------------------------
 	 * */
-	int Read(uint8_t *buffer, DWORD buf_size) const;
+	int Read(uint8_t *buffer, uint8_t buffer_size) const;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Transfers buf as is.
-	 * Returns -1 if operation is failed
+	 * @brief: Reads one byte from buffer (behavior is dependent on parameters of
+	 * ChangeTimeOut);
+	 * Returns received bytes (0:1) or failure (-1)
 	 * -------------------------------------------------------------------------------------
 	 * */
-	int Write(const uint8_t *buffer, DWORD buf_size) const;
+	int ReadByte(uint8_t *buffer) const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Writes data to buffer (up to 256 bytes per write) / transfers data as is
+	 * Returns transfered (n) bytes or failure (-1)
+	 * -------------------------------------------------------------------------------------
+	 * */
+	int Write(const uint8_t *buffer, uint8_t buffer_size) const;
+	int Write(std::string buffer) const;
 
 private:
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	enum class INSTANCE_TYPE : uint8_t {
-		OPENING = 1,
-		CREATING
-	};
-
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: File descriptor / used by OS
 	 * -------------------------------------------------------------------------------------
@@ -140,32 +144,49 @@ private:
 	HANDLE fd;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: System name of pipe. Used by Open / Create
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	std::string pipeName;
+	COMPort::STATE state;
 
 	/*! ------------------------------------------------------------------------------------
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	NamedPipe::MODE mode;
+	DWORD baudRate;
 
 	/*! ------------------------------------------------------------------------------------
+	 * @brief: Current time out
 	 * -------------------------------------------------------------------------------------
 	 * */
-	NamedPipe::STATE state;
+	TimeOutStruct timeOut;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Defines type for this exemplar / used inside
+	 * @brief: length of 10 bytes in ms
 	 * -------------------------------------------------------------------------------------
 	 * */
-	NamedPipe::INSTANCE_TYPE instanceType;
+	uint8_t charsSpacing;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Checks port for system errors / close if it was detected
+	 * -------------------------------------------------------------------------------------
+	 * */
+	bool GetStatus() const;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Resets errno
 	 * -------------------------------------------------------------------------------------
 	 * */
 	int GetLastSystemError() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Changes the algorithm for receiving data:
+	 * User sets time out to read data and number of chars which should be received;
+	 * Reset errno
+	 * -------------------------------------------------------------------------------------
+	 * */
+	bool ChangeTimeOut(const TimeOutStruct &timeOut) const;
 };
+
 
 #endif

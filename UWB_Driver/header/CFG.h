@@ -9,7 +9,6 @@ namespace CFG {
 	namespace MAIN {
 		const char* const SECTION 			= "MAIN_SECTION";
 		const char* const LOG_MODE 			= "log_mode";
-		const char* const DEVICE_ID 		= "device_id";
 	};
 
 	namespace COM {
@@ -22,6 +21,17 @@ namespace CFG {
 		const char* const SECTION			= "PIPE_SECTION";
 		const char* const WRP_NAME 			= "wr_name";
 		const char* const RDP_NAME 			= "rd_name";
+	};
+
+	namespace FIRMWARE {
+		const char* const SECTION			= "FIRMWARE_SECTION";
+		const char* const DEVICE_ID 		= "device_id";
+		const char* const PAN_ID 			= "pan_id";
+		const char* const NUM_DEVICES		= "n_devices";
+		const char* const POLL_PERIOD		= "polling_period";
+		const char* const TOKEN_TSL_DUR		= "tok_timeslot_duration";
+		const char* const RESP_DELAY		= "response_delay";
+		const char* const FINAL_DELAY		= "final_delay";
 	};
 };
 
