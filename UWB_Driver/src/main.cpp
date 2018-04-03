@@ -73,7 +73,6 @@ int main()
 	int mainstate = 0;
 	TON t1;
 	UserPackFW upack;
-	uint8_t deviceID;
 	Logger::MODE LM;
 
 	string tmps = "__OK__00";
@@ -94,10 +93,7 @@ int main()
 		ucnf = ini.GetSection(CFG::MAIN::SECTION);
 
 		// prevents segmentation fault from stoi
-		if ( ucnf.find(CFG::MAIN::DEVICE_ID) 	== ucnf.end() ) throw std::exception();
 		if ( ucnf.find(CFG::MAIN::LOG_MODE) 	== ucnf.end() ) throw std::exception();
-
-		deviceID = static_cast <uint8_t> ( stoi(ucnf.find(CFG::MAIN::DEVICE_ID)->second) );
 		LM = static_cast <Logger::MODE> ( stoi(ucnf.find(CFG::MAIN::LOG_MODE)->second) );
 
 	} catch (std::exception &e) {
@@ -133,9 +129,8 @@ int main()
 		switch (mainstate) {
 			case 0:
 			{
-				upack.Command = UserPack::COMMAND::SetID;
-				upack.DestinationID = deviceID;
-				upack.TotalSize = 0;
+				ConfigFW configFW;
+				configFW.ToUserPackFW(upack);
 
 #ifdef MAIN_DEBUG
 /* TODO: testing space. Include testing code here */

@@ -23,6 +23,7 @@
 #include "CFG.h"
 #include "Logger.h"
 #include "UserInterface.h"
+#include "ConfigFW.h"
 
 
 using std::cout;

@@ -1,15 +1,8 @@
-#ifndef USERPACK_H_
-#define USERPACK_H_
+#ifndef CONFIGFW_H_
+#define CONFIGFW_H_
 
 
-#include "_DEBUG.h"
-#include <stdint.h>
-#include <vector>
-
-
-#ifdef UserPack_DEBUG_MODE
-#include <fstream>
-#endif
+#include "UserPackFW.h"
 
 
 
@@ -17,78 +10,64 @@
  * @brief:
  * -----------------------------------------------------------------------------------------
  * */
-struct UserPack {
+struct ConfigFW {
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: according with IEEE Std 802.15.4-2011
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class COMMAND : uint8_t {
-		Status = 0,
-		SetConfig,
-		Distance,
-		Data
+	enum class STATE {
+		ERROR = -1,
+		AVAILABLE
 	};
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class STATUS : uint8_t {
-		Reserved = 0,
-		SetConfig,
-		Distance,
-		Data
-	};
+	const uint8_t configSize = 12;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	static const uint8_t BROADCAST_ID = 0xFF;
+	struct SW1000_Str {
+		uint16_t 	DeviceID;
+		uint16_t 	PAN_ID;
+		uint8_t		nDevices;
+		uint16_t	PollingPeriod;
+	} SW1000;
+	struct Token_Str {
+		uint8_t		TimeSlotDurationMs;
+	} Token;
+	struct Ranging_Str {
+		uint16_t	RespondingDelay;
+		uint16_t	FinalDelay;
+	} Ranging;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	COMMAND Command;
-	uint8_t DestinationID;
-	std::vector <uint8_t> Data;
+	void ToUserPackFW(UserPackFW &pack);
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual void ToBytes(std::vector <uint8_t> &buffer) const = 0;
+	ConfigFW();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual void ToStruct(const std::vector <uint8_t> &buffer) = 0;
+	ConfigFW::STATE GetState() const;
+private:
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual void SetData(const std::vector <uint8_t> &buffer) = 0;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	virtual void Reset() = 0;
-
-#ifdef UserPack_DEBUG_MODE
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	virtual void Print(std::ostream &os) const = 0;
-#endif
-
-	virtual ~UserPack() {};
+	ConfigFW::STATE state;
 };
 
-
-
-#endif /* USERPACK_H_ */
+#endif /* CONFIGFW_H_ */
