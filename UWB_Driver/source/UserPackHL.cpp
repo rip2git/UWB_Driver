@@ -23,7 +23,7 @@ void UserPackHL::ToStruct(const std::vector <uint8_t> &buffer)
 	this->DestinationID = buffer[i++];
 	this->TotalSize = buffer[i++];
 	this->TotalSize |= (buffer[i++] << 8);
-	this->Data.assign(buffer.begin() + i, buffer.end());
+	this->Data.assign(buffer.begin() + i, buffer.begin() + i + this->TotalSize);
 }
 
 

@@ -171,6 +171,8 @@ UserInterface::RESULT UserInterface::Read(UserPackHL &pack)
 			return UserInterface::RESULT::ERROR;
 		}
 
+		pack.ToStruct(buffer);
+
 		return UserInterface::RESULT::SUCCESS;
 	}
 	return UserInterface::RESULT::ERROR;

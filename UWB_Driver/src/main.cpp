@@ -151,6 +151,7 @@ int main()
 						hPort.Send(upackFW[0]);
 						LOG << "***sended: " << t1.since() << endl;
 						upackFW[0].Print( LOG );
+						LOG << endl;
 						mu.unlock();
 					}
 				}

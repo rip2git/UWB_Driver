@@ -62,7 +62,7 @@ struct UserPackHL : public UserPack {
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Print(std::ostream &os) const;
+	virtual void Print(std::ostream &os) const;
 #endif
 };
 

@@ -18,7 +18,7 @@ UserPackHL UserPacksConverter::ToHL(const UserPackFW &pack)
 std::vector<UserPackFW> UserPacksConverter::ToFW(const UserPackHL &pack)
 {
 	std::vector<UserPackFW> _pack;
-	bool remainder = pack.TotalSize % UserPackFW::MAX_DATA_SIZE;
+	uint8_t remainder = static_cast <uint8_t> (pack.TotalSize % UserPackFW::MAX_DATA_SIZE);
 
 	if ( remainder )
 		_pack.resize(pack.TotalSize / UserPackFW::MAX_DATA_SIZE + 1);

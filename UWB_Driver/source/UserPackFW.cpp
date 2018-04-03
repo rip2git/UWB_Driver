@@ -21,7 +21,7 @@ void UserPackFW::ToStruct(const std::vector <uint8_t> &buffer)
 	this->Command = static_cast <UserPackFW::COMMAND> (buffer[i++]);
 	this->DestinationID = buffer[i++];
 	this->TotalSize = buffer[i++];
-	this->Data.assign(buffer.begin() + i, buffer.end());
+	this->Data.assign(buffer.begin() + i, buffer.begin() + i + this->TotalSize);
 }
 
 
