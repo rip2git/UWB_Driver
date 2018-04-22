@@ -19,11 +19,14 @@
  * */
 struct UserPack {
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: according with IEEE Std 802.15.4-2011
+	 * @brief: Commands from user to firmware
+	 *
+	 * NOTE: if error is occurred, then
+	 *
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class COMMAND : uint8_t {
-		Status = 0,
+	enum class FCommand : uint8_t {
+		Error = 0,
 		SetConfig,
 		Distance,
 		Data
@@ -33,11 +36,28 @@ struct UserPack {
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class STATUS : uint8_t {
-		Reserved = 0,
-		SetConfig,
-		Distance,
-		Data
+	union SCommand {
+		uint8_t _raw;
+		uint8_t DeviceID;
+		FCommand Cmd;
+
+		SCommand& operator=(uint8_t id) {
+			DeviceID = id;
+			return *this;
+		}
+		SCommand& operator=(FCommand cmd) {
+			Cmd = cmd;
+			return *this;
+		}
+		bool operator==(SCommand& scmd) {
+			return (this->_raw == scmd._raw);
+		}
+		operator uint8_t() const {
+			return _raw;
+		}
+		operator FCommand() const {
+			return Cmd;
+		}
 	};
 
 	/*! ------------------------------------------------------------------------------------
@@ -50,8 +70,8 @@ struct UserPack {
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	COMMAND Command;
-	uint8_t DestinationID;
+	FCommand FCmd;
+	SCommand SCmd;
 	std::vector <uint8_t> Data;
 
 	/*! ------------------------------------------------------------------------------------

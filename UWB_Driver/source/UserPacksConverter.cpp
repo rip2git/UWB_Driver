@@ -5,8 +5,8 @@ UserPackHL UserPacksConverter::ToHL(const UserPackFW &pack)
 {
 	UserPackHL _pack;
 
-	_pack.Command = pack.Command;
-	_pack.DestinationID = pack.DestinationID;
+	_pack.FCmd = pack.FCmd;
+	_pack.SCmd = pack.SCmd;
 	_pack.TotalSize = pack.TotalSize;
 	_pack.Data = pack.Data;
 
@@ -27,8 +27,8 @@ std::vector<UserPackFW> UserPacksConverter::ToFW(const UserPackHL &pack)
 
 	auto pdit = pack.Data.begin();
 	for (auto it = _pack.begin(); it != _pack.end(); ++it) {
-		it->Command = pack.Command;
-		it->DestinationID = pack.DestinationID;
+		it->FCmd = pack.FCmd;
+		it->SCmd = pack.SCmd;
 		if ( remainder && (it + 1) == _pack.end() ) {
 			it->TotalSize = remainder;
 			it->Data.assign(pdit, pdit + remainder);

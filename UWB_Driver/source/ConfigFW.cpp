@@ -7,8 +7,8 @@
 void ConfigFW::ToUserPackFW(UserPackFW &pack)
 {
 	uint8_t i = 0;
-	pack.Command = UserPack::COMMAND::SetConfig;
-	pack.DestinationID = 0;
+	pack.FCmd = UserPack::FCommand::SetConfig;
+	pack.SCmd = 0;
 	pack.TotalSize = this->configSize;
 	pack.Data.resize(pack.TotalSize);
 	//
@@ -24,6 +24,9 @@ void ConfigFW::ToUserPackFW(UserPackFW &pack)
 	pack.Data[i++] = static_cast <uint8_t> (this->Ranging.RespondingDelay >> 8);
 	pack.Data[i++] = static_cast <uint8_t> (this->Ranging.FinalDelay);
 	pack.Data[i++] = static_cast <uint8_t> (this->Ranging.FinalDelay >> 8);
+	pack.Data[i++] = static_cast <uint8_t> (this->Routing.TransactionSize);
+	pack.Data[i++] = static_cast <uint8_t> (this->Routing.TrustPacks);
+	pack.Data[i++] = static_cast <uint8_t> (this->Routing.Repeats);
 }
 
 
@@ -50,6 +53,9 @@ ConfigFW::ConfigFW()
 		if ( ucnf.find(CFG::FIRMWARE::TOKEN_TSL_DUR) == ucnf.end() ) throw std::exception();
 		if ( ucnf.find(CFG::FIRMWARE::RESP_DELAY) == ucnf.end() ) throw std::exception();
 		if ( ucnf.find(CFG::FIRMWARE::FINAL_DELAY) == ucnf.end() ) throw std::exception();
+		if ( ucnf.find(CFG::FIRMWARE::TRANSACTION_SIZE) == ucnf.end() ) throw std::exception();
+		if ( ucnf.find(CFG::FIRMWARE::TRUST_PACKS) == ucnf.end() ) throw std::exception();
+		if ( ucnf.find(CFG::FIRMWARE::REPEATS) == ucnf.end() ) throw std::exception();
 
 		this->SW1000.DeviceID = std::stoi( ucnf.find(CFG::FIRMWARE::DEVICE_ID)->second );
 		this->SW1000.PAN_ID = std::stoi( ucnf.find(CFG::FIRMWARE::PAN_ID)->second );
@@ -58,6 +64,9 @@ ConfigFW::ConfigFW()
 		this->Token.TimeSlotDurationMs = std::stoi( ucnf.find(CFG::FIRMWARE::TOKEN_TSL_DUR)->second );
 		this->Ranging.RespondingDelay = std::stoi( ucnf.find(CFG::FIRMWARE::RESP_DELAY)->second );
 		this->Ranging.FinalDelay =	std::stoi( ucnf.find(CFG::FIRMWARE::FINAL_DELAY)->second );
+		this->Routing.TransactionSize = std::stoi( ucnf.find(CFG::FIRMWARE::TRANSACTION_SIZE)->second );
+		this->Routing.TrustPacks = std::stoi( ucnf.find(CFG::FIRMWARE::TRUST_PACKS)->second );
+		this->Routing.Repeats =	std::stoi( ucnf.find(CFG::FIRMWARE::REPEATS)->second );
 
 		this->state = ConfigFW::STATE::AVAILABLE;
 	} catch (std::exception &e) {

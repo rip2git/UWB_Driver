@@ -32,6 +32,9 @@ namespace CFG {
 		const char* const TOKEN_TSL_DUR		= "tok_timeslot_duration";
 		const char* const RESP_DELAY		= "response_delay";
 		const char* const FINAL_DELAY		= "final_delay";
+		const char* const TRANSACTION_SIZE	= "transaction_size";
+		const char* const TRUST_PACKS		= "trust_packs";
+		const char* const REPEATS			= "repeats";
 	};
 };
 

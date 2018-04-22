@@ -24,7 +24,7 @@ struct ConfigFW {
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	const uint8_t configSize = 12;
+	const uint8_t configSize = 15;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
@@ -43,6 +43,11 @@ struct ConfigFW {
 		uint16_t	RespondingDelay;
 		uint16_t	FinalDelay;
 	} Ranging;
+	struct Routing_Str {
+		uint8_t		TransactionSize;
+		uint8_t		TrustPacks;
+		uint8_t		Repeats;
+	} Routing;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:

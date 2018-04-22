@@ -7,8 +7,8 @@ void UserPackHL::ToBytes(std::vector <uint8_t> &buffer) const
 {
 	buffer.clear();
 	buffer.reserve(this->DATA_OFFSET + this->TotalSize);
-	buffer.push_back(static_cast <uint8_t> (this->Command));
-	buffer.push_back(this->DestinationID);
+	buffer.push_back(static_cast <uint8_t> (this->FCmd));
+	buffer.push_back(static_cast <uint8_t> (this->SCmd));
 	buffer.push_back(static_cast <uint8_t> (this->TotalSize));
 	buffer.push_back(static_cast <uint8_t> (this->TotalSize >> 8));
 	buffer.insert(buffer.end(), this->Data.begin(), this->Data.end());
@@ -19,8 +19,8 @@ void UserPackHL::ToBytes(std::vector <uint8_t> &buffer) const
 void UserPackHL::ToStruct(const std::vector <uint8_t> &buffer)
 {
 	uint8_t i = 0;
-	this->Command = static_cast <UserPackHL::COMMAND> (buffer[i++]);
-	this->DestinationID = buffer[i++];
+	this->FCmd = static_cast <UserPackHL::FCommand> (buffer[i++]);
+	this->SCmd = buffer[i++];
 	this->TotalSize = buffer[i++];
 	this->TotalSize |= (buffer[i++] << 8);
 	this->Data.assign(buffer.begin() + i, buffer.begin() + i + this->TotalSize);
@@ -38,8 +38,8 @@ void UserPackHL::SetData(const std::vector <uint8_t> &buffer)
 
 void UserPackHL::Reset()
 {
-	this->Command = UserPackHL::COMMAND::Status;
-	this->DestinationID = static_cast <uint8_t> (UserPackHL::STATUS::Reserved);
+	this->FCmd = UserPackHL::FCommand::Error;
+	this->SCmd = 0;
 	this->TotalSize = 0;
 	this->Data.clear();
 }
@@ -48,8 +48,8 @@ void UserPackHL::Reset()
 
 UserPackHL& UserPackHL::operator= (const UserPackHL &pack)
 {
-	this->Command = pack.Command;
-	this->DestinationID = pack.DestinationID;
+	this->FCmd = pack.FCmd;
+	this->SCmd = pack.SCmd;
 	this->TotalSize = pack.TotalSize;
 	this->Data = pack.Data;
 	return *this;
@@ -63,8 +63,8 @@ using std::hex;
 using std::dec;
 void UserPackHL::Print(std::ostream &os) const
 {
-	os << "{" << static_cast <int> (this->Command) << "}-";
-	os << "{" << static_cast <int> (this->DestinationID) << "}-";
+	os << "{" << static_cast <int> (this->FCmd) << "}-";
+	os << "{" << static_cast <int> (this->SCmd) << "}-";
 	os << "{" << static_cast <int> (this->TotalSize) << "}-";
 	os << "{";
 	for (uint8_t i = 0; i < this->TotalSize; ++i)

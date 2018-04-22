@@ -22,19 +22,12 @@ void receive(void) {
 		opRes = hPort.Receive(upackFW);
 		mu.unlock();
 		if (opRes == COMHandler::RESULT::SUCCESS) {
-			switch (upackFW.Command) {
-				case UserPack::COMMAND::Status:
-				{
-					LOG << "ERROR: " << static_cast <int> (upackFW.DestinationID) << endl;
-				} break;
-
+			switch (upackFW.FCmd) {
 				default:
 				{
 					upackHL = UserPacksConverter::ToHL(upackFW);
 					ui->Write(upackHL);
-					//
 					upackFW.Print( LOG );
-					LOG << " distance: " << static_cast <int> (upackFW.Data[6] + (upackFW.Data[7] << 8)) << " cm" << endl;
 				} break;
 			}
 		}
@@ -116,6 +109,7 @@ int main()
 			case 1: // config send while fails
 			{
 				hPort.Send(upackFW[0]);
+				CrossSleep(10);
 				if (hPort.Receive(upackFW[0]) == COMHandler::RESULT::SUCCESS) {
 					for (uint8_t i = 0; i < upackFW[0].TotalSize; ++i)
 						LOG << upackFW[0].Data[i];
@@ -149,7 +143,7 @@ int main()
 					if (upackFW.size() == 1) {
 						mu.try_lock();
 						hPort.Send(upackFW[0]);
-						LOG << "***sended: " << t1.since() << endl;
+						LOG << "***sended: " << t1.since() <<  " ---  ";
 						upackFW[0].Print( LOG );
 						LOG << endl;
 						mu.unlock();

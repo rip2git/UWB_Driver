@@ -1,47 +1,75 @@
+
 #include "main.h"
 
-/// linker, misc
-/// -static-libgcc -static-libstdc++
+
+
+UserInterface ui(UserInterface::MODE::OPEN_EXISTING, UserInterface::CONNTYPE::SIMPLEX_WR);
+UserPackHL upack;
+std::mutex mu;
+bool send_data_fl = false;
 
 
 
-uint8_t buf[256];
-
-
-
-void receive(void) {
-	cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n" << endl;
+void send_data(void) {
 	while (1) {
-		cout << "Данные: ";
-		cin >> buf;
+		if (send_data_fl) {
+			mu.try_lock();
+			ui.Write(upack);
+			mu.unlock();
+			send_data_fl = false;
+		}
+		CrossSleep(20);
 	}
 }
 
 
 
+
+void send_dist(void) {
+	UserPackHL dupack;
+
+	dupack.FCmd = UserPackHL::FCommand::Distance;
+	dupack.SCmd = UserPackHL::BROADCAST_ID;
+	dupack.TotalSize = 6;
+	dupack.Data.resize(dupack.TotalSize);
+	uint8_t val = 'x';
+	std::fill(dupack.Data.begin(), dupack.Data.end(), val);
+
+	while (1) {
+		mu.try_lock();
+		ui.Write(dupack);
+		CrossSleep(50);
+		mu.unlock();
+		CrossSleep(450);
+	}
+}
+
+
+
+
 int main()
 {
-	UserInterface ui(UserInterface::MODE::OPEN_EXISTING, UserInterface::CONNTYPE::SIMPLEX_WR);
-	UserPackHL upack;
-
-	std::thread thr(receive);
-	thr.detach();
+	std::thread thr1(send_dist);
+	std::thread thr2(send_data);
+	thr1.detach();
+	thr2.detach();
 	CrossSleep(10);
 
-	buf[0] = 'a';
-	buf[1] = 'b';
-	buf[2] = 'c';
-	buf[3] = 'd';
-	buf[4] = 'e';
-	buf[5] = 'f';
+	cout << "Enter data:\nExample:\"id-123456\" ---> \"1-123456\"" << endl;
 
-	upack.Command = UserPackHL::COMMAND::Distance;
-	upack.DestinationID = UserPackHL::BROADCAST_ID;
-	upack.TotalSize = 6;
+	uint8_t buffer[256];
+
+	int i;
 	while (1) {
-		upack.Data.assign(&(buf[0]), &(buf[6]));
-		ui.Write(upack);
-		CrossSleep(500);
+		cin >> buffer;
+
+		i = 0;
+		while (buffer[i++] != '\0');
+		upack.FCmd = UserPackHL::FCommand::Data;
+		upack.SCmd = buffer[0] & 0x0F;
+		upack.TotalSize = i-3;
+		upack.Data.assign(&(buffer[2]), &(buffer[i-1]));
+		send_data_fl = true;
 	}
 
 	return 0;

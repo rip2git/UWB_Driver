@@ -7,8 +7,8 @@ void UserPackFW::ToBytes(std::vector <uint8_t> &buffer) const
 {
 	buffer.clear();
 	buffer.reserve(this->DATA_OFFSET + this->TotalSize);
-	buffer.push_back(static_cast <uint8_t> (this->Command));
-	buffer.push_back(this->DestinationID);
+	buffer.push_back(static_cast <uint8_t> (this->FCmd));
+	buffer.push_back(static_cast <uint8_t> (this->SCmd));
 	buffer.push_back(this->TotalSize);
 	buffer.insert(buffer.end(), this->Data.begin(), this->Data.end());
 }
@@ -18,8 +18,8 @@ void UserPackFW::ToBytes(std::vector <uint8_t> &buffer) const
 void UserPackFW::ToStruct(const std::vector <uint8_t> &buffer)
 {
 	uint8_t i = 0;
-	this->Command = static_cast <UserPackFW::COMMAND> (buffer[i++]);
-	this->DestinationID = buffer[i++];
+	this->FCmd = static_cast <UserPackFW::FCommand> (buffer[i++]);
+	this->SCmd = buffer[i++];
 	this->TotalSize = buffer[i++];
 	this->Data.assign(buffer.begin() + i, buffer.begin() + i + this->TotalSize);
 }
@@ -37,8 +37,8 @@ void UserPackFW::SetData(const std::vector <uint8_t> &buffer)
 
 void UserPackFW::Reset()
 {
-	this->Command = UserPackFW::COMMAND::Status;
-	this->DestinationID = static_cast <uint8_t> (UserPackFW::STATUS::Reserved);
+	this->FCmd = UserPackFW::FCommand::Error;
+	this->SCmd = 0;
 	this->TotalSize = 0;
 	this->Data.clear();
 }
@@ -47,8 +47,8 @@ void UserPackFW::Reset()
 
 UserPackFW& UserPackFW::operator= (const UserPackFW &pack)
 {
-	this->Command = pack.Command;
-	this->DestinationID = pack.DestinationID;
+	this->FCmd = pack.FCmd;
+	this->SCmd = pack.SCmd;
 	this->TotalSize = pack.TotalSize;
 	this->Data = pack.Data;
 	return *this;
@@ -62,8 +62,8 @@ using std::hex;
 using std::dec;
 void UserPackFW::Print(std::ostream &os) const
 {
-	os << "{" << static_cast <int> (this->Command) << "}-";
-	os << "{" << static_cast <int> (this->DestinationID) << "}-";
+	os << "{" << static_cast <int> (this->FCmd) << "}-";
+	os << "{" << static_cast <int> (this->SCmd) << "}-";
 	os << "{" << static_cast <int> (this->TotalSize) << "}-";
 	os << "{";
 	for (uint8_t i = 0; i < this->TotalSize; ++i)
