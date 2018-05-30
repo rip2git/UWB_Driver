@@ -26,10 +26,13 @@ struct UserPack {
 	 * -------------------------------------------------------------------------------------
 	 * */
 	enum class FCommand : uint8_t {
-		Error = 0,
-		SetConfig,
+		Service = 0,
+		SystemConfig,
 		Distance,
-		Data
+		DataConfig,
+		Data,
+		Ack,
+		End
 	};
 
 	/*! ------------------------------------------------------------------------------------

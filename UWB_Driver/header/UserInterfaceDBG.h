@@ -1,38 +1,44 @@
-#ifndef USERPACKSCONVERTER_H_
-#define USERPACKSCONVERTER_H_
+#ifndef USERINTFDBG_H
+#define USERINTFDBG_H
 
 
-#include "UserPackFW.h"
-#include "UserPackHL.h"
+#include <thread>
+#include <mutex>
+
+#include "UserInterface.h"
+
 
 
 /*! ----------------------------------------------------------------------------------------
- * @brief:
+ * @brief: Provides UI through named pipes. Creates 2 pipes for reading and writing.
  * -----------------------------------------------------------------------------------------
  * */
-class UserPacksConverter {
+class UserInterfaceDBG : public UserInterface {
 public:
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	static UserPackHL ToHL(const UserPackFW &pack);
-	static UserPackHL ToHL(const std::vector <UserPackFW> &pack);
+	using UserInterface::UserInterface;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Calls close
+	 * -------------------------------------------------------------------------------------
+	 * */
+	~UserInterfaceDBG();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	static std::vector<UserPackFW> ToFW(const UserPackHL &pack, const uint8_t buffer_size);
+	void Initialization() override;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserPacksConverter() = delete;
-	~UserPacksConverter() = delete;
-	UserPacksConverter(UserPacksConverter const&) = delete;
-	UserPacksConverter& operator= (UserPacksConverter const&) = delete;
+	UserInterfaceDBG::RESULT Write(const UserPackHL &pack) override;
 };
 
-#endif /* USERPACKSCONVERTER_H_ */
+
+#endif

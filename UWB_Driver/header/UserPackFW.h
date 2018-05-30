@@ -19,11 +19,13 @@ struct UserPackFW : public UserPack {
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
+	 *
+	 * NOTE: MAX_DATA_SIZE = 126: 127 max accorfing with IEEE Std 802.15.4-2011
+	 * and -1 for service purpose
 	 * -------------------------------------------------------------------------------------
 	 * */
 	static const uint8_t DATA_OFFSET = 2 + sizeof(TotalSize);
-	static const uint8_t MAX_DATA_SIZE =
-			((1 << (2*sizeof(TotalSize))) - 1) - DATA_OFFSET - 2;
+	static const uint8_t MAX_DATA_SIZE = 126;
 	static const uint8_t MAX_PACK_BYTE =
 			static_cast <uint8_t> (MAX_DATA_SIZE + DATA_OFFSET + 2);
 

@@ -8,85 +8,89 @@
 
 UserInterface::UserInterface(UserInterface::MODE mode, UserInterface::CONNTYPE connectionType)
 {
+	this->state = UserInterface::STATE::CLOSED;
 	this->mode = mode;
 	this->connectionType = connectionType;
-	this->Initialization();
 }
 
 
 
 void UserInterface::Initialization()
 {
-	NamedPipe::InitializationStruct init_str;
+	if (this->state == UserInterface::STATE::CLOSED) {
+		NamedPipe::InitializationStruct init_str;
 
-	bool bWR = this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_WR;
-	bool bRD = this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_RD;
+		bool bWR = this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_WR;
+		bool bRD = this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_RD;
 
-	try {
-		std::map <std::string, std::string> ucnf;
-		IniFile ini(CFG::FILE_NAME);
+		try {
+			std::map <std::string, std::string> ucnf;
+			IniFile ini(CFG::FILE_NAME);
 
-		if (ini.isOpened())
-			ini.Parse();
-		else
-			throw std::exception();
+			if (ini.isOpened())
+				ini.Parse();
+			else
+				throw std::exception();
 
-		ucnf = ini.GetSection(CFG::PIPE::SECTION);
+			ucnf = ini.GetSection(CFG::PIPE::SECTION);
 
-		if (bWR) {
-			if ( ucnf.find(CFG::PIPE::WRP_NAME) == ucnf.end() ) throw std::exception();
-			init_str.pipeName.assign(ucnf.find(CFG::PIPE::WRP_NAME)->second);
-			init_str.mode = NamedPipe::MODE::WRITE;
-			this->wr_pipe.Initialization(init_str);
-		}
-		if (bRD) {
-			if ( ucnf.find(CFG::PIPE::RDP_NAME) == ucnf.end() ) throw std::exception();
-			init_str.pipeName.assign(ucnf.find(CFG::PIPE::RDP_NAME)->second);
-			init_str.mode = NamedPipe::MODE::READ;
-			this->rd_pipe.Initialization(init_str);
-		}
-
-	} catch (std::exception &e) {
-		;
-	}
-
-	if (this->mode == UserInterface::MODE::CREATE_NEW) {
-		if (bWR) {
-			this->wr_thr = std::thread(&UserInterface::wrCreate, this);
-			this->wr_thr.detach();
-		}
-		if (bRD) {
-			this->rd_thr = std::thread(&UserInterface::rdCreate, this);
-			this->rd_thr.detach();
-		}
-		CrossSleep(10);
-		if (bWR && this->wr_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-			this->wr_mutex.lock();
-		if (bRD && this->rd_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-			this->rd_mutex.lock();
-	} else { // UserInterface::OPEN_EXISTING
-		while (1) {
-			if (bWR)
-				this->wr_pipe.Open();
-			if (bRD)
-				this->rd_pipe.Open();
-			if (bWR && bRD) {
-				if (this->wr_pipe.GetState() == NamedPipe::STATE::OPENED &&
-					this->rd_pipe.GetState() == NamedPipe::STATE::OPENED
-				) {
-					break;
-				}
-			} else if (bWR) {
-				if (this->wr_pipe.GetState() == NamedPipe::STATE::OPENED)
-					break;
-			} else if (bRD) {
-				if (this->rd_pipe.GetState() == NamedPipe::STATE::OPENED)
-					break;
+			if (bWR) {
+				if ( ucnf.find(CFG::PIPE::WRP_NAME) == ucnf.end() ) throw std::exception();
+				init_str.pipeName.assign(ucnf.find(CFG::PIPE::WRP_NAME)->second);
+				init_str.mode = NamedPipe::MODE::WRITE;
+				this->wr_pipe.Initialization(init_str);
 			}
-			CrossSleep(200);
+			if (bRD) {
+				if ( ucnf.find(CFG::PIPE::RDP_NAME) == ucnf.end() ) throw std::exception();
+				init_str.pipeName.assign(ucnf.find(CFG::PIPE::RDP_NAME)->second);
+				init_str.mode = NamedPipe::MODE::READ;
+				this->rd_pipe.Initialization(init_str);
+			}
+
+		} catch (std::exception &e) {
+			return;
 		}
+
+		if (this->mode == UserInterface::MODE::CREATE_NEW) {
+			if (bWR) {
+				this->wr_thr = std::thread(&UserInterface::wrCreate, this);
+				this->wr_thr.detach();
+			}
+			if (bRD) {
+				this->rd_thr = std::thread(&UserInterface::rdCreate, this);
+				this->rd_thr.detach();
+			}
+			CrossSleep(10);
+			if (bWR && this->wr_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
+				this->wr_mutex.try_lock();
+			if (bRD && this->rd_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
+				this->rd_mutex.try_lock();
+			this->state = UserInterface::STATE::OPENED;
+		} else { // UserInterface::OPEN_EXISTING
+			while (1) {
+				if (bWR)
+					this->wr_pipe.Open();
+				if (bRD)
+					this->rd_pipe.Open();
+				if (bWR && bRD) {
+					if (this->wr_pipe.GetState() == NamedPipe::STATE::OPENED &&
+						this->rd_pipe.GetState() == NamedPipe::STATE::OPENED
+					) {
+						break;
+					}
+				} else if (bWR) {
+					if (this->wr_pipe.GetState() == NamedPipe::STATE::OPENED)
+						break;
+				} else if (bRD) {
+					if (this->rd_pipe.GetState() == NamedPipe::STATE::OPENED)
+						break;
+				}
+				CrossSleep(200);
+			}
+			this->state = UserInterface::STATE::OPENED;
+		}
+		return;
 	}
-	return;
 }
 
 
@@ -100,10 +104,13 @@ UserInterface::~UserInterface()
 
 void UserInterface::Close()
 {
-	this->wr_pipe.Close();
-	this->rd_pipe.Close();
-	this->rd_mutex.unlock();
-	this->wr_mutex.unlock();
+	if (this->state != UserInterface::STATE::CLOSED) {
+		this->state = UserInterface::STATE::CLOSED;
+		this->wr_pipe.Close();
+		this->rd_pipe.Close();
+		this->rd_mutex.unlock();
+		this->wr_mutex.unlock();
+	}
 	return;
 }
 
@@ -127,7 +134,10 @@ void UserInterface::ReOpen()
 
 UserInterface::RESULT UserInterface::Write(const UserPackHL &pack)
 {
-	if (this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_WR) {
+    if (this->state == UserInterface::STATE::OPENED &&
+       (this->connectionType == UserInterface::CONNTYPE::DUPLEX ||
+        this->connectionType == UserInterface::CONNTYPE::SIMPLEX_WR)
+    ) {
 		std::vector <uint8_t> buffer;
 		pack.ToBytes(buffer);
 
@@ -147,7 +157,10 @@ UserInterface::RESULT UserInterface::Write(const UserPackHL &pack)
 
 UserInterface::RESULT UserInterface::Read(UserPackHL &pack)
 {
-	if (this->connectionType == UserInterface::CONNTYPE::DUPLEX || this->connectionType == UserInterface::CONNTYPE::SIMPLEX_RD) {
+    if (this->state == UserInterface::STATE::OPENED &&
+       (this->connectionType == UserInterface::CONNTYPE::DUPLEX ||
+        this->connectionType == UserInterface::CONNTYPE::SIMPLEX_RD)
+    ) {
 		std::vector <uint8_t> buffer;
 		buffer.resize(UserPackHL::DATA_OFFSET);
 
@@ -180,9 +193,16 @@ UserInterface::RESULT UserInterface::Read(UserPackHL &pack)
 
 
 
+UserInterface::STATE UserInterface::GetState() const
+{
+	return this->state;
+}
+
+
+
 void UserInterface::rdCreate()
 {
-	this->rd_mutex.lock();
+	this->rd_mutex.try_lock();
 	this->rd_pipe.Create();
 	this->rd_mutex.unlock();
 }
@@ -191,7 +211,7 @@ void UserInterface::rdCreate()
 
 void UserInterface::wrCreate()
 {
-	this->wr_mutex.lock();
+	this->wr_mutex.try_lock();
 	this->wr_pipe.Create();
 	this->wr_mutex.unlock();
 }

@@ -37,7 +37,7 @@ void UserPackFW::SetData(const std::vector <uint8_t> &buffer)
 
 void UserPackFW::Reset()
 {
-	this->FCmd = UserPackFW::FCommand::Error;
+	this->FCmd = UserPackFW::FCommand::Service;
 	this->SCmd = 0;
 	this->TotalSize = 0;
 	this->Data.clear();
@@ -66,8 +66,10 @@ void UserPackFW::Print(std::ostream &os) const
 	os << "{" << static_cast <int> (this->SCmd) << "}-";
 	os << "{" << static_cast <int> (this->TotalSize) << "}-";
 	os << "{";
-	for (uint8_t i = 0; i < this->TotalSize; ++i)
-		os << static_cast <char> (this->Data[i]);
-	os << "}";
+	for (uint8_t i = 0; i < this->TotalSize; ++i) {
+		os << hex << static_cast <int> (this->Data[i]);
+		os << dec << " ";
+	}
+	os << "}" << endl;
 }
 #endif

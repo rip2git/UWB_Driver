@@ -53,7 +53,7 @@ void COMHandler::Initialization()
 		pn = ucnf.find(CFG::COM::COM_NAME)->second;
 		init_str.portName = &( pn[0] );
 		init_str.baudRate = std::stoi( ucnf.find(CFG::COM::BAUD_RATE)->second );
-		init_str.timeOut.Ms = 10;
+		init_str.timeOut.Ms = 50;
 		init_str.timeOut.nChars = 0;
 
 		this->port.Initialization(init_str);

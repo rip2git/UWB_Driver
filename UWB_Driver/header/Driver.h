@@ -1,170 +1,143 @@
-#ifndef USERINTF_H
-#define USERINTF_H
+#ifndef DRIVER_H_
+#define DRIVER_H_
 
 
+#include <iostream>
+#include <vector>
+#include <string>
+#include <map>
+#include <iterator>
+#include <cstdlib>
+#include <ctime>
 #include <thread>
 #include <mutex>
+#include <cstdint>
 
-#include "NamedPipe.h"
-#include "UserPackHL.h"
-
+#include "_DEBUG.h"
+#include "CrossSleep.h"
+#include "TON.h"
+#include "COMHandler.h"
+#include "CheckDelegate.h"
+#include "ChangeDelegate.h"
+#include "IniFiles.h"
+#include "CFG.h"
+#include "Logger.h"
+#include "UserInterface.h"
+#include "UserInterfaceDBG.h"
+#include "UserPacksConverter.h"
+#include "ConfigFW.h"
+#include "DataConfig.h"
 
 
 /*! ----------------------------------------------------------------------------------------
- * @brief: Provides UI through named pipes. Creates 2 pipes for reading and writing.
+ * @brief:
  * -----------------------------------------------------------------------------------------
  * */
-class UserInterface {
+class Driver {
 public:
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class STATE : uint8_t {
-		CLOSED = 0,
-		OPENED
-	};
+	Driver() = default;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class MODE : uint8_t {
-		OPEN_EXISTING = 1,
-		CREATE_NEW
-	};
+	~Driver();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class CONNTYPE : uint8_t {
-		DUPLEX = 1,
-		SIMPLEX_RD,
-		SIMPLEX_WR
-	};
+	void StartProcess(void);
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class RESULT {
-		ERROR = -1,
-		SUCCESS
-	};
+	void Initialization(void);
 
+private:
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Sets mode and connection type
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface(UserInterface::MODE mode, UserInterface::CONNTYPE connectionType);
+	TON *t1;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls close
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual ~UserInterface();
+	Logger *LOG;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Reads user data from pipe
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual UserInterface::RESULT Read(UserPackHL &pack);
+	std::mutex *uiMutex, *wrMutex;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Writes user data to pipe
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual UserInterface::RESULT Write(const UserPackHL &pack);
+	COMHandler *hPort;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns false if the pipe was broken, but is ready now.
-	 * Checks only rd_pipe (wr_pipe is depended, and isn't checkable): doesn't work
-	 * when using DUPLEX::HALF_WR
-	 *
-	 * NOTE: the method catches calling thread
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool CheckWorkingCapacity();
+	UserInterface *ui;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns current state of UI
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface::STATE GetState() const;
+	UserInterfaceDBG *uiDBG;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Initialises pipes depending on the mode and connection type
-	 *
-	 * NOTE: state must be equals to CLOSED, else - no operations
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	virtual void Initialization();
+	std::thread initDBGThread;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Destroy pipes
-	 *
-	 * NOTE: state mustn't be equals to CLOSED, else - no operations
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Close();
-
-protected:
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Interfaces between driver and higher layer
-	 * -------------------------------------------------------------------------------------
-	 * */
-	NamedPipe rd_pipe, wr_pipe;
+	std::thread receivingThread;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Mode of UI: open existing pipes or create new
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface::MODE mode;
+	void Polling();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: State of UI: opened / closed
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface::STATE state;
+	void Receive(void);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Mode of UI: create / open one (read or write) or two (read and write) pipes
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	UserInterface::CONNTYPE connectionType;
+	bool SendData(const DataConfig &dataConfig, const std::vector<UserPackFW> &upackFW);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls Close and Initialization
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void ReOpen();
+	UserPackHL ReceiveData(const DataConfig &dataConfig);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Used by *_thr to open pipes in any order
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
-	std::mutex rd_mutex, wr_mutex;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Threads for initialization of pipes
-	 * -------------------------------------------------------------------------------------
-	 * */
-	std::thread rd_thr, wr_thr;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Creates read pipe (opens existing or creates new)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void rdCreate();
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Creates write pipe (opens existing or creates new)
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void wrCreate();
+	void InitDebugUI(void);
 
 };
 
-
-#endif
+#endif /* DRIVER_H_ */

@@ -59,6 +59,12 @@ void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 		case 38400: this->baudRate = B38400; break;
 		case 57600: this->baudRate = B57600; break;
 		case 115200: this->baudRate = B115200; break;
+		case 460800: this->baudRate = B460800; break;
+		case 921600: this->baudRate = B921600; break;
+		case 1152000: this->baudRate = B1152000; break;
+		case 2000000: this->baudRate = B2000000; break;
+		case 2500000: this->baudRate = B2500000; break;
+		case 4000000: this->baudRate = B4000000; break;
 		default: this->baudRate = B9600; break;
 		}
 

@@ -38,7 +38,7 @@ void UserPackHL::SetData(const std::vector <uint8_t> &buffer)
 
 void UserPackHL::Reset()
 {
-	this->FCmd = UserPackHL::FCommand::Error;
+	this->FCmd = UserPackHL::FCommand::Service;
 	this->SCmd = 0;
 	this->TotalSize = 0;
 	this->Data.clear();

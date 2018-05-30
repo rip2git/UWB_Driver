@@ -24,8 +24,10 @@
 #include "CFG.h"
 #include "Logger.h"
 #include "UserInterface.h"
+#include "UserInterfaceDBG.h"
 #include "UserPacksConverter.h"
 #include "ConfigFW.h"
+#include "DataConfig.h"
 
 
 using std::cout;

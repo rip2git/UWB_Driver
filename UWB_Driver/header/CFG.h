@@ -23,6 +23,21 @@ namespace CFG {
 		const char* const RDP_NAME 			= "rd_name";
 	};
 
+    namespace DBG_PIPE {
+        const char* const SECTION			= "DBG_PIPE_SECTION";
+        const char* const ENABLE 			= "dbg_pipe_enable";
+        const char* const WRP_NAME 			= "dbg_wr_name";
+        const char* const RDP_NAME 			= "dbg_rd_name";
+    };
+
+    namespace DATA {
+		const char* const SECTION			= "DATA_SECTION";
+		const char* const BUFFER_SIZE		= "buffer_size";
+		const char* const TRANSACTION_SIZE	= "transaction_size";
+		const char* const TRUST_PACKS		= "trust_packs";
+		const char* const REPEATS			= "repeats";
+	};
+
 	namespace FIRMWARE {
 		const char* const SECTION			= "FIRMWARE_SECTION";
 		const char* const DEVICE_ID 		= "device_id";
@@ -32,9 +47,6 @@ namespace CFG {
 		const char* const TOKEN_TSL_DUR		= "tok_timeslot_duration";
 		const char* const RESP_DELAY		= "response_delay";
 		const char* const FINAL_DELAY		= "final_delay";
-		const char* const TRANSACTION_SIZE	= "transaction_size";
-		const char* const TRUST_PACKS		= "trust_packs";
-		const char* const REPEATS			= "repeats";
 	};
 };
 

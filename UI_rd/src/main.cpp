@@ -1,20 +1,10 @@
-
-#include "main.h"
-
+#include "MainWorker.h"
 
 
 int main()
 {
-	UserInterface ui(UserInterface::MODE::OPEN_EXISTING, UserInterface::CONNTYPE::SIMPLEX_RD);
-	PrintableUserPack upack;
+	MainWorker mw;
+	mw.Start();
 
-	while (1) {
-		if (ui.Read( upack ) == UserInterface::RESULT::SUCCESS) {
-			upack.Print( cout );
-			cout << endl;
-		}
-	}
-
-	return 0;
+    return 0;
 }
-
