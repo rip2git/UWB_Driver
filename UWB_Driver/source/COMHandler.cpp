@@ -53,7 +53,7 @@ void COMHandler::Initialization()
 		pn = ucnf.find(CFG::COM::COM_NAME)->second;
 		init_str.portName = &( pn[0] );
 		init_str.baudRate = std::stoi( ucnf.find(CFG::COM::BAUD_RATE)->second );
-		init_str.timeOut.Ms = 50;
+		init_str.timeOut.Ms = 20;
 		init_str.timeOut.nChars = 0;
 
 		this->port.Initialization(init_str);
@@ -96,8 +96,7 @@ COMHandler::RESULT COMHandler::Send(const UserPackFW &pack) const
 
 COMHandler::RESULT COMHandler::Receive(UserPackFW &pack) const
 {
-	std::vector <uint8_t> buffer;
-	buffer.resize(UserPackFW::DATA_OFFSET);
+	std::vector <uint8_t> buffer (UserPackFW::DATA_OFFSET);
 
 	pack.Reset();
 

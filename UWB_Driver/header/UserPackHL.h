@@ -22,9 +22,9 @@ struct UserPackHL : public UserPack {
 	 * -------------------------------------------------------------------------------------
 	 * */
 	static const uint8_t DATA_OFFSET = 2 + sizeof(TotalSize);
-	static const uint16_t MAX_DATA_SIZE = (1 << (8 * sizeof(TotalSize))) - 1;
-	static const uint16_t MAX_PACK_BYTE =
-			static_cast <uint16_t> (MAX_DATA_SIZE + DATA_OFFSET);
+	static const uint16_t DATA_MAX_SIZE = (1 << (8 * sizeof(TotalSize))) - 1;
+	static const uint16_t PACK_MAX_SIZE =
+			static_cast <uint16_t> (DATA_MAX_SIZE + DATA_OFFSET);
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:

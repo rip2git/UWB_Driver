@@ -11,6 +11,7 @@ UserInterface::UserInterface(UserInterface::MODE mode, UserInterface::CONNTYPE c
 	this->state = UserInterface::STATE::CLOSED;
 	this->mode = mode;
 	this->connectionType = connectionType;
+	this->wr_thr = this->rd_thr = nullptr;
 }
 
 
@@ -53,18 +54,23 @@ void UserInterface::Initialization()
 
 		if (this->mode == UserInterface::MODE::CREATE_NEW) {
 			if (bWR) {
-				this->wr_thr = std::thread(&UserInterface::wrCreate, this);
-				this->wr_thr.detach();
+				this->wr_thr = new std::thread(&UserInterface::wrCreate, this);
+				this->wr_thr->detach();
 			}
 			if (bRD) {
-				this->rd_thr = std::thread(&UserInterface::rdCreate, this);
-				this->rd_thr.detach();
+				this->rd_thr = new std::thread(&UserInterface::rdCreate, this);
+				this->rd_thr->detach();
 			}
 			CrossSleep(10);
 			if (bWR && this->wr_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-				this->wr_mutex.try_lock();
+				this->wr_mutex.lock(); // wait until opened
 			if (bRD && this->rd_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-				this->rd_mutex.try_lock();
+				this->rd_mutex.lock(); // wait until opened
+			delete this->wr_thr;
+			this->wr_thr = nullptr;
+			delete this->rd_thr;
+			this->rd_thr = nullptr;
+
 			this->state = UserInterface::STATE::OPENED;
 		} else { // UserInterface::OPEN_EXISTING
 			while (1) {
@@ -202,7 +208,7 @@ UserInterface::STATE UserInterface::GetState() const
 
 void UserInterface::rdCreate()
 {
-	this->rd_mutex.try_lock();
+	this->rd_mutex.lock();
 	this->rd_pipe.Create();
 	this->rd_mutex.unlock();
 }
@@ -211,7 +217,7 @@ void UserInterface::rdCreate()
 
 void UserInterface::wrCreate()
 {
-	this->wr_mutex.try_lock();
+	this->wr_mutex.lock();
 	this->wr_pipe.Create();
 	this->wr_mutex.unlock();
 }

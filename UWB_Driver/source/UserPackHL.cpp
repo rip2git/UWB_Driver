@@ -11,7 +11,8 @@ void UserPackHL::ToBytes(std::vector <uint8_t> &buffer) const
 	buffer.push_back(static_cast <uint8_t> (this->SCmd));
 	buffer.push_back(static_cast <uint8_t> (this->TotalSize));
 	buffer.push_back(static_cast <uint8_t> (this->TotalSize >> 8));
-	buffer.insert(buffer.end(), this->Data.begin(), this->Data.end());
+	if (this->TotalSize > 0)
+		buffer.insert(buffer.end(), this->Data.begin(), this->Data.end());
 }
 
 
@@ -19,7 +20,7 @@ void UserPackHL::ToBytes(std::vector <uint8_t> &buffer) const
 void UserPackHL::ToStruct(const std::vector <uint8_t> &buffer)
 {
 	uint8_t i = 0;
-	this->FCmd = static_cast <UserPackHL::FCommand> (buffer[i++]);
+	this->FCmd = buffer[i++];
 	this->SCmd = buffer[i++];
 	this->TotalSize = buffer[i++];
 	this->TotalSize |= (buffer[i++] << 8);
@@ -38,7 +39,7 @@ void UserPackHL::SetData(const std::vector <uint8_t> &buffer)
 
 void UserPackHL::Reset()
 {
-	this->FCmd = UserPackHL::FCommand::Service;
+	this->FCmd = 0;
 	this->SCmd = 0;
 	this->TotalSize = 0;
 	this->Data.clear();

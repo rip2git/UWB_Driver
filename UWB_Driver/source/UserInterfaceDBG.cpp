@@ -25,11 +25,6 @@ void UserInterfaceDBG::Initialization()
 
 			ucnf = ini.GetSection(CFG::DBG_PIPE::SECTION);
 
-			/*if ( ucnf.find(CFG::DBG_PIPE::WRP_NAME) == ucnf.end() ) throw std::exception();
-			std::string enable = ucnf.find(CFG::DBG_PIPE::ENABLE)->second;
-			if (enable == "0" || enable == "off")
-				throw std::exception();*/
-
 			if (bWR) {
 				if ( ucnf.find(CFG::DBG_PIPE::WRP_NAME) == ucnf.end() ) throw std::exception();
 				init_str.pipeName.assign(ucnf.find(CFG::DBG_PIPE::WRP_NAME)->second);
@@ -49,19 +44,24 @@ void UserInterfaceDBG::Initialization()
 
 		if (this->mode == UserInterfaceDBG::MODE::CREATE_NEW) {
 			if (bWR) {
-				this->wr_thr = std::thread(&UserInterfaceDBG::wrCreate, this);
-				this->wr_thr.detach();
+				this->wr_thr = new std::thread(&UserInterfaceDBG::wrCreate, this);
+				this->wr_thr->detach();
 			}
 			if (bRD) {
-				this->rd_thr = std::thread(&UserInterfaceDBG::rdCreate, this);
-				this->rd_thr.detach();
+				this->rd_thr = new std::thread(&UserInterfaceDBG::rdCreate, this);
+				this->rd_thr->detach();
 			}
 			CrossSleep(10);
 			if (bWR && this->wr_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-				this->wr_mutex.lock();
+				this->wr_mutex.lock(); // wait until opened
 			if (bRD && this->rd_pipe.GetState() == NamedPipe::STATE::INITIALIZED)
-				this->rd_mutex.lock();
-			this->state = UserInterfaceDBG::STATE::OPENED;
+				this->rd_mutex.lock(); // wait until opened
+			delete this->wr_thr;
+			this->wr_thr = nullptr;
+			delete this->rd_thr;
+			this->rd_thr = nullptr;
+
+			this->state = UserInterface::STATE::OPENED;
         } else { // UserInterfaceDBG::OPEN_EXISTING
 			while (1) {
 				if (bWR)

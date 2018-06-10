@@ -16,6 +16,7 @@ CPP_SRCS += \
 ../source/TON.cpp \
 ../source/UserInterface.cpp \
 ../source/UserInterfaceDBG.cpp \
+../source/UserPack.cpp \
 ../source/UserPackFW.cpp \
 ../source/UserPackHL.cpp \
 ../source/UserPacksConverter.cpp 
@@ -33,6 +34,7 @@ OBJS += \
 ./source/TON.o \
 ./source/UserInterface.o \
 ./source/UserInterfaceDBG.o \
+./source/UserPack.o \
 ./source/UserPackFW.o \
 ./source/UserPackHL.o \
 ./source/UserPacksConverter.o 
@@ -50,6 +52,7 @@ CPP_DEPS += \
 ./source/TON.d \
 ./source/UserInterface.d \
 ./source/UserInterfaceDBG.d \
+./source/UserPack.d \
 ./source/UserPackFW.d \
 ./source/UserPackHL.d \
 ./source/UserPacksConverter.d 
@@ -58,8 +61,8 @@ CPP_DEPS += \
 # Each subdirectory must supply rules for building sources it contributes
 source/%.o: ../source/%.cpp
 	@echo 'Building file: $<'
-	@echo 'Invoking: Cross G++ Compiler'
-	g++  -std=c++11 -I../header -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
+	@echo 'Invoking: GCC C++ Compiler'
+	g++ -I../header -O3 -Wall -c -fmessage-length=0 -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@)" -o "$@" "$<"
 	@echo 'Finished building: $<'
 	@echo ' '
 

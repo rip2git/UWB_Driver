@@ -31,9 +31,9 @@ void DataConfig::ToStruct(const UserPackFW &pack)
 
 void DataConfig::ToUserPackFW(UserPackFW &pack) const
 {
-	if (this->configSize  <= UserPackFW::MAX_DATA_SIZE) {
+	if (this->configSize <= UserPackFW::DATA_MAX_SIZE) {
 		uint8_t i = 0;
-		pack.FCmd = UserPackFW::FCommand::DataConfig;
+		pack.FCmd = UserPackFW::Command::DataConfig;
 		pack.SCmd = 0;
 		pack.TotalSize = this->configSize;
 		pack.Data.resize(pack.TotalSize);

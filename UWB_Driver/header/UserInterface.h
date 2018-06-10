@@ -150,7 +150,7 @@ protected:
 	 * @brief: Threads for initialization of pipes
 	 * -------------------------------------------------------------------------------------
 	 * */
-	std::thread rd_thr, wr_thr;
+	std::thread *rd_thr, *wr_thr;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Creates read pipe (opens existing or creates new)

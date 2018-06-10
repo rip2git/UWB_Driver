@@ -51,6 +51,8 @@ NCurses::NCurses()
 
 NCurses::~NCurses()
 {
+	for (auto &o : objects)
+		delete o;
 	endwin();
 }
 

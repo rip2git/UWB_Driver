@@ -24,8 +24,7 @@ namespace CFG {
 	};
 
     namespace DBG_PIPE {
-        const char* const SECTION			= "DBG_PIPE_SECTION";
-        const char* const ENABLE 			= "dbg_pipe_enable";
+        const char* const SECTION			= "DBG_SECTION";
         const char* const WRP_NAME 			= "dbg_wr_name";
         const char* const RDP_NAME 			= "dbg_rd_name";
     };
@@ -34,17 +33,19 @@ namespace CFG {
 		const char* const SECTION			= "DATA_SECTION";
 		const char* const BUFFER_SIZE		= "buffer_size";
 		const char* const TRANSACTION_SIZE	= "transaction_size";
-		const char* const TRUST_PACKS		= "trust_packs";
+		const char* const TRUST_PACKS		= "trust_frame";
 		const char* const REPEATS			= "repeats";
 	};
 
 	namespace FIRMWARE {
 		const char* const SECTION			= "FIRMWARE_SECTION";
+        const char* const DEBUG_MODE 		= "debug_mode";
 		const char* const DEVICE_ID 		= "device_id";
 		const char* const PAN_ID 			= "pan_id";
 		const char* const NUM_DEVICES		= "n_devices";
 		const char* const POLL_PERIOD		= "polling_period";
 		const char* const TOKEN_TSL_DUR		= "tok_timeslot_duration";
+		const char* const MIN_SIG_LVL		= "minimum_signal_level";
 		const char* const RESP_DELAY		= "response_delay";
 		const char* const FINAL_DELAY		= "final_delay";
 	};

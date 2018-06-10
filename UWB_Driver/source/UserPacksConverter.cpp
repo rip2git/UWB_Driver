@@ -23,7 +23,7 @@ UserPackHL UserPacksConverter::ToHL(const std::vector <UserPackFW> &pack)
 		_pack.FCmd = pack[0].FCmd;
 		_pack.SCmd = pack[0].SCmd;
 		_pack.TotalSize = 0;
-		_pack.Data.reserve(UserPackHL::MAX_DATA_SIZE);
+		_pack.Data.reserve(UserPackHL::DATA_MAX_SIZE);
 
 		for (size_t i = 0; i < pack.size(); ++i) {
 			_pack.Data.insert(_pack.Data.begin() + _pack.TotalSize, pack[i].Data.begin(), pack[i].Data.end());

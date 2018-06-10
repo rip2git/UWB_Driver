@@ -31,7 +31,7 @@ void MainWorker::Start()
 
 		i = 0;
 		while (buffer[i++] != '\0');
-		this->UPackData.FCmd = UserPackHL::FCommand::Data;
+		this->UPackData.FCmd = UserPackHL::Command::Data;
 		this->UPackData.SCmd = buffer[0] & 0x0F;
 		this->UPackData.TotalSize = i-3;
 		this->UPackData.Data.assign(&(buffer[2]), &(buffer[i-1]));
@@ -44,7 +44,7 @@ void MainWorker::Start()
 void MainWorker::sendDistance(void)
 {
 	UserPackHL dupack;
-	dupack.FCmd = UserPackHL::FCommand::Distance;
+	dupack.FCmd = UserPackHL::Command::Distance;
 	dupack.SCmd = UserPackHL::BROADCAST_ID;
 	dupack.TotalSize = 6;
 	dupack.Data.resize(dupack.TotalSize);
@@ -52,7 +52,7 @@ void MainWorker::sendDistance(void)
 	std::fill(dupack.Data.begin(), dupack.Data.end(), val);
 
 	while (1) {
-		this->mu.try_lock();
+		this->mu.lock();
 		this->UI_pipeData->Write(dupack);
 		CrossSleep(50);
 		this->mu.unlock();
@@ -66,7 +66,7 @@ void MainWorker::sendData(void)
 {
 	while (1) {
 		if (this->send_data_fl) {
-			this->mu.try_lock();
+			this->mu.lock();
 			this->UI_pipeData->Write(this->UPackData);
 			this->mu.unlock();
 			this->send_data_fl = false;

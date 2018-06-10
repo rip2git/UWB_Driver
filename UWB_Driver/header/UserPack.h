@@ -20,19 +20,61 @@
 struct UserPack {
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Commands from user to firmware
-	 *
-	 * NOTE: if error is occurred, then
-	 *
 	 * -------------------------------------------------------------------------------------
 	 * */
-	enum class FCommand : uint8_t {
-		Service = 0,
-		SystemConfig,
-		Distance,
-		DataConfig,
-		Data,
-		Ack,
-		End
+	enum class Command : uint8_t {
+		Service = 0x80,
+		SystemConfig = 0x81,
+		Distance = 0x82,
+		DataConfig = 0x83,
+		Data = 0x84,
+		Ack = 0x85,
+		End = 0x86
+	};
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Results of commands from user to firmware
+	 * -------------------------------------------------------------------------------------
+	 * */
+	enum class CommandResult : uint8_t {
+		Fail = 0x40,
+		Success = 0x41,
+		Accepted = 0x42
+	};
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	union FCommand {
+		uint8_t _raw;
+		CommandResult Res;
+		Command Cmd;
+
+		FCommand& operator=(Command cmd) {
+			Cmd = cmd;
+			return *this;
+		}
+		FCommand& operator=(CommandResult cmdres) {
+			Res = cmdres;
+			return *this;
+		}
+		FCommand& operator=(uint8_t raw) {
+			_raw = raw;
+			return *this;
+		}
+		bool operator==(const FCommand& fcmd) {
+			return (this->_raw == fcmd._raw);
+		}
+		operator CommandResult() const {
+			return Res;
+		}
+		operator uint8_t() const {
+			return _raw;
+		}
+		operator Command() const {
+			return Cmd;
+		}
 	};
 
 	/*! ------------------------------------------------------------------------------------
@@ -42,23 +84,23 @@ struct UserPack {
 	union SCommand {
 		uint8_t _raw;
 		uint8_t DeviceID;
-		FCommand Cmd;
+		Command Cmd;
 
 		SCommand& operator=(uint8_t id) {
 			DeviceID = id;
 			return *this;
 		}
-		SCommand& operator=(FCommand cmd) {
+		SCommand& operator=(Command cmd) {
 			Cmd = cmd;
 			return *this;
 		}
-		bool operator==(SCommand& scmd) {
+		bool operator==(const SCommand& scmd) {
 			return (this->_raw == scmd._raw);
 		}
 		operator uint8_t() const {
 			return _raw;
 		}
-		operator FCommand() const {
+		operator Command() const {
 			return Cmd;
 		}
 	};
@@ -76,6 +118,15 @@ struct UserPack {
 	FCommand FCmd;
 	SCommand SCmd;
 	std::vector <uint8_t> Data;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	static bool isCommand(const FCommand &Fcmd);
+	static bool isResult(const FCommand &FCmd);
+	static bool isCommand(const SCommand &Scmd);
+	static bool isDeviceID(const SCommand &Scmd);
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:

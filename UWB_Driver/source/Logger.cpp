@@ -1,6 +1,7 @@
 
 #include <iostream>
 #include <ctime>
+#include <iomanip>
 #include "Logger.h"
 
 
@@ -9,6 +10,32 @@ Logger::~Logger()
 {
 	if (this->is_open())
 		this->close();
+}
+
+
+
+Logger& Logger::operator<<(TON &t)
+{
+	long long int ms = t.since() % 1000;
+	*this << "[" << t.since() / 1000 << "." << std::setfill('0') << std::setw(3) << ms << "] ";
+	return *this;
+}
+
+
+
+void Logger::SwitchMode(Logger::MODE mode)
+{
+	switch (mode) {
+	case Logger::MODE::OFF:
+		this->toNull();
+		break;
+	case Logger::MODE::CONSOLE:
+		this->toConsole();
+		break;
+	case Logger::MODE::FILE:
+		this->toFile();
+		break;
+	}
 }
 
 

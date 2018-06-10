@@ -9,8 +9,8 @@
 
 void MainWorker::Start()
 {
-	this->UI_pipeDBG->Initialization();
 	this->UI_pipeData->Initialization();
+	this->UI_pipeDBG->Initialization();
 	this->dataThread = std::thread(&MainWorker::setData, this);
 	this->dataThread.detach();
 	this->debugThread = std::thread(&MainWorker::setDebug, this);
@@ -31,13 +31,13 @@ void MainWorker::setData(void)
 
 	while (1) {
 		if (this->UI_pipeData->Read( upack ) == UserInterface::RESULT::SUCCESS) {
-			this->mu_rd.try_lock();
-			switch (upack.FCmd) {
-				case UserPackHL::FCommand::Distance: {
+			this->mu_rd.lock();
+			switch (upack.FCmd.Cmd) {
+				case UserPackHL::Command::Distance: {
 					int dist = (upack.Data[6] + (upack.Data[7] << 8));
 					this->tbl_Distance->SetValue(std::to_string(dist), 1, upack.SCmd - 1);
 				} break;
-				case UserPackHL::FCommand::Data: {
+				case UserPackHL::Command::Data: {
 					std::string sTmp(upack.Data.begin(), upack.Data.end());
 					std::string qsTmp = "id" + std::to_string(upack.SCmd) + ": " + sTmp;
 					this->list_Receive->PushBack(qsTmp);
@@ -58,10 +58,10 @@ void MainWorker::setDebug(void)
 
 	while (1) {
 		if (this->UI_pipeDBG->Read( upack ) == UserInterface::RESULT::SUCCESS) {
-			this->mu_rd.try_lock();
-			switch (upack.FCmd) {
+			this->mu_rd.lock();
+			switch (upack.FCmd.Cmd) {
 
-				case UserPackHL::FCommand::Service: {
+				case UserPackHL::Command::Service: {
 					/*
 					 * [0] --> Debug group:
 					 *      =0 - common log, [1] = 'S' - symbolic, '0' - raw;
@@ -174,7 +174,7 @@ MainWorker::MainWorker()
 
 	{ // tables fill
 		std::vector < std::vector <std::string> > cv = {
-				{"1", "2", "2", "3", "4", "5", "6", "7" ,"8", "9"},
+				{"1", "2", "3", "4", "5", "6", "7", "8" ,"9", "10"},
 				{" ", " ", " ", " ", " ", " ", " ", " " ," ", " "}
 		};
 		std::vector <std::string> cn = {"ids", ""};
