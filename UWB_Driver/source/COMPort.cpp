@@ -377,21 +377,3 @@ int COMPort::Write(const uint8_t *buf, uint8_t buf_size) const
 	return res;
 }
 
-
-
-int COMPort::Write(std::string buffer) const
-{
-	int res;
-	size_t buf_size = 0;
-	while (buffer[buf_size] != '\0') ++buf_size;
-	#ifdef __linux__
-		res = write(this->fd, &(buffer[0]), buf_size);
-	#else
-		DWORD bytes_written;
-		res = WriteFile(this->fd, &(buffer[0]), buf_size, &bytes_written, 0);
-		res = (res != 0)? static_cast <int> (bytes_written) : -1;
-	#endif
-		return res;
-}
-
-

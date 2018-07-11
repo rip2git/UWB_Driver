@@ -147,7 +147,7 @@ void Driver::Polling()
 	DataConfig dataConfig;
 	dataConfig.ReadConfig();
 
-	TON pollingTimer;
+	TON responseTimer;
 	int repeats;
 	while (1) {
 		if (this->signals.reConfig == Signal::Set)
@@ -161,34 +161,55 @@ void Driver::Polling()
 			this->signals.accepted = Signal::Reset;
 
 			if (upackFW.size() == 1) {
-				pollingTimer.start(this->pollingPeriod);
-				do { // waiting for accept-result
-					this->hPort->Send(upackFW[0]);
-					*this->LOG << *this->t1 << "DRV: ";
-					upackFW[0].Print( *this->LOG );
-					CrossSleep(this->pollingPeriod / 10);
-					if ( this->signals.accepted == Signal::Set )
-						break;
-				} while ( !pollingTimer.check() );
+				responseTimer.start(this->responseTime);
+				uint8_t waitingStep = 0;
+				bool breakOut = false;
 
-				// waiting for timeout || fail || success of operation
-				while ( !pollingTimer.check() &&
-						this->signals.fail == Signal::Reset &&
-						this->signals.success == Signal::Reset
-				) {
-					CrossSleep(this->pollingPeriod / 10);
-				}
-
+				upackHL.FCmd.Res = UserPackHL::CommandResult::Fail;
 				upackHL.SCmd.Cmd = upackHL.FCmd.Cmd;
-				upackHL.FCmd.Res = (this->signals.success == Signal::Set)?
-						UserPackHL::CommandResult::Success : UserPackHL::CommandResult::Fail;
 				upackHL.TotalSize = 0;
+
+				// todo std signals
+				do { // waiting for accept-result
+					switch (waitingStep) {
+						// send
+						case 0: {
+							this->hPort->Send(upackFW[0]);
+							*this->LOG << *this->t1 << "DRV: ";
+							upackFW[0].Print( *this->LOG );
+							waitingStep = 1;
+						} break;
+						// waiting for accept
+						case 1: {
+							CrossSleep(this->responseTime / 10);
+							if ( this->signals.accepted == Signal::Set ) {
+								waitingStep = 2;
+							} else {
+								waitingStep = 0;
+							}
+						} break;
+						// waiting for result
+						case 2: {
+							CrossSleep(this->responseTime / 10);
+							if ( this->signals.fail == Signal::Set ||
+								this->signals.success == Signal::Set )
+							{
+								upackHL.FCmd.Res = (this->signals.success == Signal::Set)?
+										UserPackHL::CommandResult::Success : UserPackHL::CommandResult::Fail;
+								breakOut = true;
+							}
+						} break;
+					}
+					// result has been received
+					if (breakOut)
+						break;
+				} while ( !responseTimer.check() );
 
 				this->wrMutex->lock();
 				this->ui->Write(upackHL);
 				this->wrMutex->unlock();
 
-				pollingTimer.reset();
+				responseTimer.reset();
 			}
 //			else if (upackHL.FCmd == UserPackHL::FCommand::Data &&
 //				dataConfig.GetState() == DataConfig::STATE::AVAILABLE
@@ -308,7 +329,9 @@ void Driver::Initialization(void)
 		ucnf = ini.GetSection(CFG::MAIN::SECTION);
 		// prevents segmentation fault from stoi
 		if ( ucnf.find(CFG::MAIN::LOG_MODE) == ucnf.end() ) throw std::exception();
+		if ( ucnf.find(CFG::MAIN::RESP_TIME) == ucnf.end() ) throw std::exception();
 		LM = static_cast <Logger::MODE> ( stoi(ucnf.find(CFG::MAIN::LOG_MODE)->second) );
+		this->responseTime = stoi(ucnf.find(CFG::MAIN::RESP_TIME)->second);
 
 		ucnf = ini.GetSection(CFG::DATA::SECTION);
 		if ( ucnf.find(CFG::DATA::REPEATS) == ucnf.end() ) throw std::exception();

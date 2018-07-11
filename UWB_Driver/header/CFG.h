@@ -9,6 +9,7 @@ namespace CFG {
 	namespace MAIN {
 		const char* const SECTION 			= "MAIN_SECTION";
 		const char* const LOG_MODE 			= "log_mode";
+		const char* const RESP_TIME 		= "response_time";
 	};
 
 	namespace COM {

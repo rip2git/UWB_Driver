@@ -6,7 +6,7 @@
 void UserPackHL::ToBytes(std::vector <uint8_t> &buffer) const
 {
 	buffer.clear();
-	buffer.reserve(this->DATA_OFFSET + this->TotalSize);
+	buffer.reserve(UserPackHL::DATA_OFFSET + this->TotalSize);
 	buffer.push_back(static_cast <uint8_t> (this->FCmd));
 	buffer.push_back(static_cast <uint8_t> (this->SCmd));
 	buffer.push_back(static_cast <uint8_t> (this->TotalSize));
