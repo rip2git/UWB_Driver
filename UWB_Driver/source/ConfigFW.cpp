@@ -7,8 +7,8 @@
 void ConfigFW::ToUserPackFW(UserPackFW &pack) const
 {
 	uint8_t i = 0;
-	pack.FCmd = UserPack::Command::SystemConfig;
-	pack.SCmd = 0;
+	pack.FCmd = UserPack::Command::Service;
+	pack.SCmd = UserPack::Command::SystemConfig;
 	pack.TotalSize = this->configSize;
 	pack.Data.resize(pack.TotalSize);
 	//

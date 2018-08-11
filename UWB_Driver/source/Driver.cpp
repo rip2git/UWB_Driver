@@ -27,9 +27,8 @@ void Driver::Receive(void)
 			*this->LOG << *this->t1 << "FW: ";
 			upackFW.Print( *this->LOG );
 
-			upackHL = UserPacksConverter::ToHL(upackFW);
-
 			if ( UserPackFW::isCommand(upackFW.FCmd) ) {
+				upackHL = UserPacksConverter::ToHL(upackFW);
 				switch (upackFW.FCmd.Cmd)
 				{
 				// ------------------------------------------------------------------------
@@ -69,9 +68,9 @@ void Driver::Receive(void)
 
 			if (toUser) {
 				toUser = false;
-				this->wrMutex->lock();
+				this->uiMutex->lock();
 				this->ui->Write(upackHL);
-				this->wrMutex->unlock();
+				this->uiMutex->unlock();
 			}
 		}
 	}
@@ -90,55 +89,6 @@ void Driver::Receive(void)
 
 
 
-bool Driver::SendData(const DataConfig &dataConfig, const std::vector<UserPackFW> &upackFW)
-{
-	// todo
-//	int i = 0;
-//	UserPackFW upack_service;
-//
-//	dataConfig.ToUserPackFW(upack_service);
-//	this->hPort->Send(upack_service);
-//
-//	if (this->hPort->Receive(upack_service) == COMHandler::RESULT::SUCCESS &&
-//		upack_service.FCmd == UserPackFW::FCommand::Service &&
-//		upack_service.SCmd == UserPackFW::FCommand::Ack
-//	) {
-//		for (; i < 2 && i < upackFW.size(); ++i) {
-//			this->hPort->Send(upackFW[i]);
-//			*this->LOG << *this->t1 << "DRV: ";
-//			upackFW[i].Print( *this->LOG );
-//		}
-//		for (; i < upackFW.size(); ++i) {
-//			if (this->hPort->Receive(upack_service) == COMHandler::RESULT::SUCCESS &&
-//				upack_service.FCmd == UserPackFW::FCommand::Service &&
-//				upack_service.SCmd == UserPackFW::FCommand::Ack
-//			) {
-//				this->hPort->Send(upackFW[i]);
-//				*this->LOG << *this->t1 << "DRV: ";
-//				upackFW[i].Print( *this->LOG );
-//			} else {
-//				return false;
-//			}
-//		}
-//		// todo последнее подтверждение уходит к Receive
-//		return true;
-//	}
-	return false;
-}
-
-
-
-UserPackHL Driver::ReceiveData(const DataConfig &dataConfig)
-{
-	// todo
-	std::vector<UserPackFW> upackFW(dataConfig.Parts);
-
-
-	return UserPacksConverter::ToHL(upackFW);
-}
-
-
-
 void Driver::Polling()
 {
 	UserPackHL upackHL;
@@ -146,9 +96,9 @@ void Driver::Polling()
 	UserPackFW retupackFW;
 	DataConfig dataConfig;
 	dataConfig.ReadConfig();
-
 	TON responseTimer;
-	int repeats;
+	//int repeats;
+
 	while (1) {
 		if (this->signals.reConfig == Signal::Set)
 			return;
@@ -156,11 +106,9 @@ void Driver::Polling()
 		if (this->ui->Read(upackHL) == UserInterface::RESULT::SUCCESS) {
 			upackFW = UserPacksConverter::ToFW(upackHL, dataConfig.BufferSize);
 
-			this->signals.success = Signal::Reset;
-			this->signals.fail = Signal::Reset;
-			this->signals.accepted = Signal::Reset;
-
 			if (upackFW.size() == 1) {
+				this->portMutex->lock();
+
 				responseTimer.start(this->responseTime);
 				uint8_t waitingStep = 0;
 				bool breakOut = false;
@@ -205,11 +153,12 @@ void Driver::Polling()
 						break;
 				} while ( !responseTimer.check() );
 
-				this->wrMutex->lock();
+				this->uiMutex->lock();
 				this->ui->Write(upackHL);
-				this->wrMutex->unlock();
+				this->uiMutex->unlock();
 
 				responseTimer.reset();
+				this->portMutex->unlock();
 			}
 //			else if (upackHL.FCmd == UserPackHL::FCommand::Data &&
 //				dataConfig.GetState() == DataConfig::STATE::AVAILABLE
@@ -234,7 +183,9 @@ void Driver::Polling()
 //					this->uiMutex->unlock();
 //				}
 //			}
-
+			this->signals.success = Signal::Reset;
+			this->signals.fail = Signal::Reset;
+			this->signals.accepted = Signal::Reset;
 		}
 	}
 }
@@ -364,6 +315,9 @@ void Driver::Initialization(void)
 	this->uiDBG = new UserInterfaceDBG(UserInterfaceDBG::MODE::CREATE_NEW, UserInterfaceDBG::CONNTYPE::SIMPLEX_WR);
 	this->initDBGThread = new std::thread(&Driver::InitDebugUI, this);
 	this->initDBGThread->detach();
+
+	this->statusThread = new std::thread(&Driver::FWStatusPolling, this);
+	this->statusThread->detach();
 	CrossSleep(10);
 }
 
@@ -378,12 +332,112 @@ void Driver::InitDebugUI(void)
 
 
 
+void Driver::FWStatusPolling(void)
+{
+	const int sleepTime = this->pollingPeriod + this->pollingPeriod / 2;
+	UserPackFW upackFW;
+	UserPackHL upackHL;
+	int pollingState = 0;
+
+	upackFW.FCmd = UserPackFW::Command::Service;
+	upackFW.SCmd = UserPackFW::Command::Status;
+	upackFW.TotalSize = 0;
+
+	upackHL.SCmd = UserPackFW::Command::Status;
+	upackHL.TotalSize = 0;
+
+	while (1) {
+		switch (pollingState) {
+		// sleeps and locks port
+		case 0: {
+			CrossSleep(sleepTime);
+			this->portMutex->lock();
+			pollingState = 1;
+		} break;
+		// sends status request
+		case 1: {
+			*this->LOG << *this->t1 << "DRV: ";
+			upackFW.Print( *this->LOG );
+			this->hPort->Send(upackFW);
+			pollingState = 2;
+		} break;
+		// waits for response
+		case 2: {
+			CrossSleep(this->responseTime / 10);
+			upackHL.FCmd.Res = (this->signals.accepted == Signal::Set)?
+					UserPackHL::CommandResult::Success : UserPackHL::CommandResult::Fail;
+
+			this->uiMutex->lock();
+			this->ui->Write(upackHL);
+			this->uiMutex->unlock();
+
+			this->signals.accepted = Signal::Reset;
+			this->portMutex->unlock();
+			pollingState = 0;
+		} break;
+		}
+	}
+}
+
+
+
+bool Driver::SendData(const DataConfig &dataConfig, const std::vector<UserPackFW> &upackFW)
+{
+	// todo
+//	int i = 0;
+//	UserPackFW upack_service;
+//
+//	dataConfig.ToUserPackFW(upack_service);
+//	this->hPort->Send(upack_service);
+//
+//	if (this->hPort->Receive(upack_service) == COMHandler::RESULT::SUCCESS &&
+//		upack_service.FCmd == UserPackFW::FCommand::Service &&
+//		upack_service.SCmd == UserPackFW::FCommand::Ack
+//	) {
+//		for (; i < 2 && i < upackFW.size(); ++i) {
+//			this->hPort->Send(upackFW[i]);
+//			*this->LOG << *this->t1 << "DRV: ";
+//			upackFW[i].Print( *this->LOG );
+//		}
+//		for (; i < upackFW.size(); ++i) {
+//			if (this->hPort->Receive(upack_service) == COMHandler::RESULT::SUCCESS &&
+//				upack_service.FCmd == UserPackFW::FCommand::Service &&
+//				upack_service.SCmd == UserPackFW::FCommand::Ack
+//			) {
+//				this->hPort->Send(upackFW[i]);
+//				*this->LOG << *this->t1 << "DRV: ";
+//				upackFW[i].Print( *this->LOG );
+//			} else {
+//				return false;
+//			}
+//		}
+//		// todo последнее подтверждение уходит к Receive
+//		return true;
+//	}
+	return false;
+}
+
+
+
+UserPackHL Driver::ReceiveData(const DataConfig &dataConfig)
+{
+	// todo
+	std::vector<UserPackFW> upackFW(dataConfig.Parts);
+
+
+	return UserPacksConverter::ToHL(upackFW);
+}
+
+
+
 Driver::Driver()
 {
 	this->LOG = new Logger();
 	this->initDBGThread = nullptr;
 	this->receivingThread = nullptr;
-	this->wrMutex = new std::mutex();
+	this->statusThread = nullptr;
+	this->uiMutex = new std::mutex();
+	this->portMutex = new std::mutex();
 	this->hPort = nullptr;
 	this->ui = nullptr;
 	this->uiDBG = nullptr;
@@ -404,7 +458,9 @@ Driver::~Driver()
 	delete this->LOG;
 	delete this->initDBGThread;
 	delete this->receivingThread;
-	delete this->wrMutex;
+	delete this->statusThread;
+	delete this->uiMutex;
+	delete this->portMutex;
 	delete this->hPort;
 	delete this->ui;
 	delete this->uiDBG;
