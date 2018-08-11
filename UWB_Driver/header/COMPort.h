@@ -42,11 +42,17 @@ public:
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
+	 *
+	 * NOTE: additionalBaudRate is used e.g. when the device is a radio-module with two BRs:
+	 * 		- wire baud rate
+	 * 		- air baud rate
+	 * without additional baud rate this param must be equal to zero
 	 * -------------------------------------------------------------------------------------
 	 * */
 	struct InitializationStruct {
 		std::string portName;
-		DWORD baudRate;
+		DWORD wireBaudRate;
+		DWORD additionalBaudRate;
 		TimeOutStruct timeOut;
 	};
 
@@ -58,60 +64,30 @@ public:
 	COMPort(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Calls Close
+	 * @brief:
 	 * -------------------------------------------------------------------------------------
 	 * */
 	~COMPort();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief:
+	 * @brief: Opens the port
 	 * -------------------------------------------------------------------------------------
 	 * */
-	COMPort::STATE GetState() const;
+	COMPort::STATE Initialization(const InitializationStruct &initStr);
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Closes file descriptor
+	 * @brief: Reopens the port if it was not be closed, but was be successfully initialized
 	 * -------------------------------------------------------------------------------------
 	 * */
-	void Close();
+	COMPort::STATE ReOpen();
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Flush by OS abilities
+	 * @brief: Closes the port
+	 *
+	 * NOTE: The port must be initialized again if it is needed after calling this method
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool FastFlush() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Slow flush: doing fast flush, gets delay = charsSpacing and tries to read
-	 * byte. If last is failed when return true, else repeats from the beginning.
-	 * Changes timeOut for its own purposes. Returns timeOut before return from call
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void Flush() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Returns current time out
-	 * -------------------------------------------------------------------------------------
-	 * */
-	const TimeOutStruct& GetCurrentTimeOut() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	int GetAvailableBytesOfRecvBuf() const;
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief: Sets timeOut and calls ChangeTimeOut
-	 * -------------------------------------------------------------------------------------
-	 * */
-	bool SetTimeOut(const TimeOutStruct &timeOut);
-
-	/*! ------------------------------------------------------------------------------------
-	 * @brief:
-	 * -------------------------------------------------------------------------------------
-	 * */
-	void Initialization(const InitializationStruct &initStr);
+	COMPort::STATE Close();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Reads data from buffer (behavior is dependent on parameters of ChangeTimeOut);
@@ -135,12 +111,63 @@ public:
 	 * */
 	int Write(const uint8_t *buffer, uint8_t buffer_size) const;
 
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Checks port for system errors
+	 *
+	 * return value is test result: true - test passed
+	 * -------------------------------------------------------------------------------------
+	 * */
+	bool DoTest() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	COMPort::STATE GetState() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Flush by OS abilities
+	 * -------------------------------------------------------------------------------------
+	 * */
+	bool FastFlush() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Slow flush: doing fast flush, gets delay = charsSpacing and tries to read
+	 * byte. If last is failed when return true, else repeats from the beginning.
+	 * -------------------------------------------------------------------------------------
+	 * */
+	void Flush() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief:
+	 * -------------------------------------------------------------------------------------
+	 * */
+	int GetAvailableBytesOfRecvBuf() const;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Sets timeOut
+	 * -------------------------------------------------------------------------------------
+	 * */
+	void SetTimeOut(const TimeOutStruct &timeOut);
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: Returns current time out
+	 * -------------------------------------------------------------------------------------
+	 * */
+	const TimeOutStruct& GetCurrentTimeOut() const;
+
 private:
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: File descriptor / used by OS
 	 * -------------------------------------------------------------------------------------
 	 * */
 	HANDLE fd;
+
+	/*! ------------------------------------------------------------------------------------
+	 * @brief: File name / used by OS
+	 * -------------------------------------------------------------------------------------
+	 * */
+	std::string fName;
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief:
@@ -167,10 +194,10 @@ private:
 	uint8_t charsSpacing;
 
 	/*! ------------------------------------------------------------------------------------
-	 * @brief: Checks port for system errors / close if it was detected
+	 * @brief: Opens the port
 	 * -------------------------------------------------------------------------------------
 	 * */
-	bool GetStatus() const;
+	COMPort::STATE Open();
 
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Resets errno
@@ -181,10 +208,12 @@ private:
 	/*! ------------------------------------------------------------------------------------
 	 * @brief: Changes the algorithm for receiving data:
 	 * User sets time out to read data and number of chars which should be received;
-	 * Reset errno
+	 *
+	 * NOTE: changes SYSTEM timeouts, not own "timeOut" variable
 	 * -------------------------------------------------------------------------------------
 	 * */
 	bool ChangeTimeOut(const TimeOutStruct &timeOut) const;
+
 };
 
 

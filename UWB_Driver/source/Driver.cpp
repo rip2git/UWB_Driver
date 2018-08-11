@@ -19,12 +19,12 @@ void Driver::Receive(void)
 	COMHandler::RESULT opRes;
 	bool toUser = false;
 
-	*this->LOG << *this->t1 << "Read-thread started" << endl;
+	*this->LOG << this->LOG->Time << "Read-thread started" << endl;
 	while (1) {
 		opRes = this->hPort->Receive(upackFW);
 
 		if (opRes == COMHandler::RESULT::SUCCESS) {
-			*this->LOG << *this->t1 << "FW: ";
+			*this->LOG << this->LOG->Time << "FW: ";
 			upackFW.Print( *this->LOG );
 
 			if ( UserPackFW::isCommand(upackFW.FCmd) ) {
@@ -79,7 +79,7 @@ void Driver::Receive(void)
 //				case UserPack::Command::DataConfig: {
 //					DataConfig dataConfig;
 //					dataConfig.ToStruct(upackFW);
-//					*this->LOG << *this->t1 << "FW: ";
+//					*this->LOG << this->LOG->Time << "FW: ";
 //					upackFW.Print( *this->LOG );
 //					if (dataConfig.GetState() == DataConfig::STATE::AVAILABLE) {
 //						upackHL = this->ReceiveData(dataConfig);
@@ -123,7 +123,7 @@ void Driver::Polling()
 						// send
 						case 0: {
 							this->hPort->Send(upackFW[0]);
-							*this->LOG << *this->t1 << "DRV: ";
+							*this->LOG << this->LOG->Time << "DRV: ";
 							upackFW[0].Print( *this->LOG );
 							waitingStep = 1;
 						} break;
@@ -198,7 +198,7 @@ void Driver::StartProcess()
 	UserPackFW upack;
 	int mainstate = 0;
 
-	*this->LOG << *this->t1 << "High Level is connected -> Start" << endl;
+	*this->LOG << this->LOG->Time << "High Level is connected -> Start" << endl;
 
 	while (1) {
 		switch (mainstate) {
@@ -208,7 +208,7 @@ void Driver::StartProcess()
 				configFW.ToUserPackFW(upack);
 
 				if (configFW.GetState() != ConfigFW::STATE::AVAILABLE) {
-					*this->LOG << *this->t1 << "CONFIG FIRMWARE error -> Exit" << endl;
+					*this->LOG << this->LOG->Time << "CONFIG FIRMWARE error -> Exit" << endl;
 					exit(0);
 				}
 				mainstate = 1;
@@ -222,7 +222,7 @@ void Driver::StartProcess()
 					CHRes = this->hPort->Receive(upack);
 					if (CHRes != COMHandler::RESULT::SUCCESS)
 						break;
-					*this->LOG << *this->t1 << "FW: ";
+					*this->LOG << this->LOG->Time << "FW: ";
 					upack.Print( *this->LOG );
 
 					if (upack.FCmd == UserPack::CommandResult::Success &&
@@ -247,12 +247,12 @@ void Driver::StartProcess()
 			} break;
 			case 3: // polling
 			{
-				*this->LOG << *this->t1 << "Write-thread started" << endl;
+				*this->LOG << this->LOG->Time << "Write-thread started" << endl;
 				this->Polling();
 
 				delete this->receivingThread;
 				this->receivingThread = nullptr;
-				*this->LOG << *this->t1 << "Firmware requested the configuration -> End threads, Restart" << endl;
+				*this->LOG << this->LOG->Time << "Firmware requested the configuration -> End threads, Restart" << endl;
 				mainstate = 0; // restart
 			} break;
 
@@ -303,9 +303,9 @@ void Driver::Initialization(void)
 	// opens COM port -------------------------------------------------------------------------
 	this->hPort = new COMHandler();
 	if (this->hPort->GetState() == COMHandler::STATE::OPENED) {
-		*this->LOG << *this->t1 << "Port" << static_cast <int> (this->hPort->GetPortNumber()) << " is opened" << endl;
+		*this->LOG << this->LOG->Time << "Port" << static_cast <int> (this->hPort->GetPortNumber()) << " is opened" << endl;
 	} else {
-		*this->LOG << *this->t1 << "Port error -> Exit" << endl;
+		*this->LOG << this->LOG->Time << "Port error -> Exit" << endl;
 		exit(0);
 	}
 
@@ -326,7 +326,7 @@ void Driver::Initialization(void)
 void Driver::InitDebugUI(void)
 {
 	this->uiDBG->Initialization();
-	*this->LOG << *this->t1 << "Debugging is attached" << endl;
+	*this->LOG << this->LOG->Time << "Debugging is attached" << endl;
 	return;
 }
 
@@ -356,7 +356,7 @@ void Driver::FWStatusPolling(void)
 		} break;
 		// sends status request
 		case 1: {
-			*this->LOG << *this->t1 << "DRV: ";
+			*this->LOG << this->LOG->Time << "DRV: ";
 			upackFW.Print( *this->LOG );
 			this->hPort->Send(upackFW);
 			pollingState = 2;
@@ -396,7 +396,7 @@ bool Driver::SendData(const DataConfig &dataConfig, const std::vector<UserPackFW
 //	) {
 //		for (; i < 2 && i < upackFW.size(); ++i) {
 //			this->hPort->Send(upackFW[i]);
-//			*this->LOG << *this->t1 << "DRV: ";
+//			*this->LOG << this->LOG->Time << "DRV: ";
 //			upackFW[i].Print( *this->LOG );
 //		}
 //		for (; i < upackFW.size(); ++i) {
@@ -405,7 +405,7 @@ bool Driver::SendData(const DataConfig &dataConfig, const std::vector<UserPackFW
 //				upack_service.SCmd == UserPackFW::FCommand::Ack
 //			) {
 //				this->hPort->Send(upackFW[i]);
-//				*this->LOG << *this->t1 << "DRV: ";
+//				*this->LOG << this->LOG->Time << "DRV: ";
 //				upackFW[i].Print( *this->LOG );
 //			} else {
 //				return false;
@@ -445,16 +445,12 @@ Driver::Driver()
 	this->signals.reConfig = Signal::Reset;
 	this->signals.accepted = Signal::Reset;
 	this->signals.success = Signal::Reset;
-
-	this->t1 = new TON();
-	this->t1->start(0);
 }
 
 
 
 Driver::~Driver()
 {
-	delete this->t1;
 	delete this->LOG;
 	delete this->initDBGThread;
 	delete this->receivingThread;

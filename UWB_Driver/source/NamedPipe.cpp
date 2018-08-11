@@ -3,15 +3,16 @@
 #include "TON.h"
 
 #ifdef __linux__
-#include <errno.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <sys/stat.h>
+	#include <errno.h>
+	#include <termios.h>
+	#include <fcntl.h>
+	#include <unistd.h>
+	#include <signal.h>
+	#include <sys/stat.h>
 #else
-#include <windows.h>
-#define BUFFER_SIZE 	2048
-#define TIMEOUT			5000
+	#include <windows.h>
+	#define BUFFER_SIZE 	2048
+	#define TIMEOUT			5000
 #endif
 
 
@@ -228,6 +229,19 @@ int NamedPipe::GetLastSystemError() const
 	SetLastError(0);
 #endif
 	return lastErr;
+}
+
+
+
+bool NamedPipe::FastFlush() const
+{
+#ifdef __linux__
+	int res = tcflush(this->fd, TCIFLUSH);
+	return (res != -1);
+#else
+	DWORD res = PurgeComm(this->fd, PURGE_RXCLEAR);
+	return (res != 0);
+#endif
 }
 
 

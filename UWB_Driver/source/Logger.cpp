@@ -6,6 +6,13 @@
 
 
 
+Logger::Logger() : std::fstream()
+{
+	this->Time.start(0);
+}
+
+
+
 Logger::~Logger()
 {
 	if (this->is_open())
@@ -17,7 +24,7 @@ Logger::~Logger()
 Logger& Logger::operator<<(TON &t)
 {
 	long long int ms = t.since() % 1000;
-	*this << "[" << t.since() / 1000 << "." << std::setfill('0') << std::setw(3) << ms << "] ";
+	*this << "\n[" << t.since() / 1000 << "." << std::setfill('0') << std::setw(3) << ms << "] ";
 	return *this;
 }
 

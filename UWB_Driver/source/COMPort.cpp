@@ -30,20 +30,66 @@ COMPort::COMPort(const InitializationStruct &initStr)
 
 
 
-void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
+COMPort::STATE COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 {
 	this->state = COMPort::STATE::CLOSED;
 	//
-	this->baudRate = initStr.baudRate;
+	this->baudRate = initStr.wireBaudRate;
 	this->timeOut.Ms = initStr.timeOut.Ms;
 	this->timeOut.nChars = initStr.timeOut.nChars;
+	DWORD tmp_BR =
+			(initStr.additionalBaudRate != 0 &&
+			initStr.wireBaudRate > initStr.additionalBaudRate)?
+			initStr.additionalBaudRate : initStr.wireBaudRate;
 	this->charsSpacing = static_cast <uint8_t> (
-		(8000.0 / static_cast <double> (this->baudRate)) * 10.0
+		(8000.0 / static_cast <double> (tmp_BR)) * 10.0
 	);
 	this->charsSpacing += this->charsSpacing? 0 : 1;
 #ifdef __linux__
-	std::string fName = "/dev/tty" + initStr.portName;
-	this->fd = open(fName.c_str(), O_RDWR | O_NOCTTY);
+	this->fName = "/dev/tty" + initStr.portName;
+#else
+	this->fName = initStr.portName;
+#endif
+	this->Open();
+
+
+	return this->state;
+}
+
+
+
+COMPort::~COMPort()
+{
+	this->Close();
+}
+
+
+
+const COMPort::TimeOutStruct& COMPort::GetCurrentTimeOut() const
+{
+	return this->timeOut;
+}
+
+
+
+int COMPort::GetAvailableBytesOfRecvBuf() const
+{
+#ifdef __linux__
+	int buf_size;
+	ioctl(this->fd, FIONREAD, &buf_size);
+	return buf_size;
+#else
+	/* WINDOWS AVAILABLE BYTES */
+	return 0;
+#endif
+}
+
+
+
+COMPort::STATE COMPort::Open()
+{
+#ifdef __linux__
+	this->fd = open(this->fName.c_str(), O_RDWR | O_NOCTTY);
 	if (this->fd != -1) {
 		termios options;
 		tcgetattr(this->fd, &options);
@@ -89,14 +135,14 @@ void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 		}
 	}
 #else
-	std::wstring wstemp = std::wstring(initStr.portName.begin(), initStr.portName.end());
-	LPCWSTR fName = wstemp.c_str();
+	std::wstring wstemp = std::wstring(this->fName.begin(), this->fName.end());
+	LPCWSTR lpfName = wstemp.c_str();
 
 	// FileName, AccessFlags, ShareMode, SecurityAttributes,
 	//		CreationDisposition, FlagsAndAttributes, hTemplateFile
 	// COMname, w/r, file-capture, default access,
 	//		open existing file, default file attr, ignore when using existing file
-	this->fd = CreateFileW(fName, GENERIC_READ | GENERIC_WRITE, 0, 0,
+	this->fd = CreateFileW(lpfName, GENERIC_READ | GENERIC_WRITE, 0, 0,
 		OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
 	if (this->fd != INVALID_HANDLE_VALUE) {
 		DCB dcbSerialParams = { 0 };
@@ -107,48 +153,29 @@ void COMPort::Initialization(const COMPort::InitializationStruct &initStr)
 			dcbSerialParams.StopBits = ONESTOPBIT;
 			dcbSerialParams.Parity = NOPARITY;
 
-			if (SetCommState(this->fd, &dcbSerialParams) &&
-				this->ChangeTimeOut(this->timeOut)
-			) {
+			if (SetCommState(this->fd, &dcbSerialParams)) {
 				this->state = COMPort::STATE::OPENED;
 			}
 		}
 	}
 #endif
-	return;
+	return this->state;
 }
 
 
 
-COMPort::~COMPort()
+COMPort::STATE COMPort::ReOpen()
 {
-	this->Close();
+	if (this->state != COMPort::STATE::CLOSED) {
+		this->Close();
+		this->Open();
+	}
+	return this->state;
 }
 
 
 
-const COMPort::TimeOutStruct& COMPort::GetCurrentTimeOut() const
-{
-	return this->timeOut;
-}
-
-
-
-int COMPort::GetAvailableBytesOfRecvBuf() const
-{
-#ifdef __linux__
-	int buf_size;
-	ioctl(this->fd, FIONREAD, &buf_size);
-	return buf_size;
-#else
-	/* WINDOWS AVAILABLE BYTES */
-	return 0;
-#endif
-}
-
-
-
-void COMPort::Close()
+COMPort::STATE COMPort::Close()
 {
 	if (this->state != COMPort::STATE::CLOSED) {
 		this->state = COMPort::STATE::CLOSED;
@@ -158,7 +185,7 @@ void COMPort::Close()
 		CloseHandle(this->fd);
 #endif
 	}
-	return;
+	return this->state;
 }
 
 
@@ -170,11 +197,9 @@ COMPort::STATE COMPort::GetState() const
 
 
 
-bool COMPort::SetTimeOut(const TimeOutStruct &timeOut)
+void COMPort::SetTimeOut(const TimeOutStruct &timeOut)
 {
-	this->timeOut.Ms = timeOut.Ms;
-	this->timeOut.nChars = timeOut.nChars;
-	return ChangeTimeOut(timeOut);
+	this->timeOut = timeOut;
 }
 
 
@@ -232,6 +257,7 @@ void COMPort::Flush() const
 #else
 		DWORD bytes_recvd;
 		Sleep(this->charsSpacing);
+		this->ChangeTimeOut(this->timeOut);
 		ReadFile(this->fd, &buf, 1, &bytes_recvd, 0);
 		res = static_cast <int> (bytes_recvd);
 #endif
@@ -256,7 +282,8 @@ bool COMPort::FastFlush() const
 }
 
 
-bool COMPort::GetStatus() const
+
+bool COMPort::DoTest() const
 {
 	int lastErr;
 #ifdef __linux__
@@ -322,6 +349,7 @@ int COMPort::ReadByte(uint8_t *buf) const
 		this->FastFlush();
 #else
 	DWORD bytes_recvd;
+	this->ChangeTimeOut(this->timeOut);
 	res = ReadFile(this->fd, buf, 1, &bytes_recvd, 0);
 	res = (res != 0)? static_cast <int> (bytes_recvd) : -1;
 #endif
@@ -356,6 +384,7 @@ int COMPort::Read(uint8_t *buf, uint8_t buf_size) const
 		this->FastFlush();
 #else
 	DWORD bytes_recvd;
+	this->ChangeTimeOut(this->timeOut);
 	res = ReadFile(this->fd, buf, buf_size, &bytes_recvd, 0);
 	res = (res != 0)? static_cast <int> (bytes_recvd) : -1;
 #endif
@@ -376,4 +405,3 @@ int COMPort::Write(const uint8_t *buf, uint8_t buf_size) const
 #endif
 	return res;
 }
-

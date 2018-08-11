@@ -69,6 +69,7 @@ void MainWorker::setDebug(void)
 					 *      =2 - routing levels: id, lvl
 					 *      =3 - recv/ret state
 					 *      =4 - send state
+					 *      =5 - main automat state
 					*/
 					switch (upack.Data[0]) {
 						case 0: {
